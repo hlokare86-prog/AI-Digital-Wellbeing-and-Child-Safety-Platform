@@ -24,3 +24,9 @@ class Child(Base):
         "User",
         back_populates="children"
     )
+
+    policies = relationship(
+        "ChildPolicy",
+        back_populates="child",
+        cascade="all, delete-orphan"
+    )
