@@ -1,5 +1,7 @@
 from fastapi import FastAPI
 from app.routers import auth, child, dns
+from app.routers import child_policy
+
 app = FastAPI(
     title="MindShield AI",
     description="AI-Powered Digital Wellbeing and Child Safety Platform",
@@ -8,6 +10,7 @@ app = FastAPI(
 app.include_router(auth.router)
 app.include_router(child.router)
 app.include_router(dns.router) 
+app.include_router(child_policy.router)
 @app.get("/")
 def root():
     return {
