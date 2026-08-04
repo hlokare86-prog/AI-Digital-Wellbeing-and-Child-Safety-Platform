@@ -1,5 +1,5 @@
-from sqlalchemy import Column, Integer, String, Boolean
-
+from sqlalchemy import Column, Integer, String, Boolean, Enum
+from app.models.category_enum import WebsiteCategory
 from app.database.database import Base
 
 
@@ -16,7 +16,7 @@ class Website(Base):
     )
 
     category = Column(
-        String(100),
+        Enum(WebsiteCategory),
         nullable=False
     )
 

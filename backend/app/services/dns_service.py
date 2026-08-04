@@ -2,7 +2,7 @@ from sqlalchemy.orm import Session
 
 from app.models.website import Website
 from app.schemas.dns import WebsiteCreate
-
+from app.models.child_policy import ChildPolicy
 
 def create_website(
     db: Session,
@@ -64,14 +64,17 @@ def delete_website(
 
 def check_website(
     db: Session,
+    child_id: int,
     domain: str
 ):
+    # Find website in database
     website = (
         db.query(Website)
         .filter(Website.domain == domain)
         .first()
     )
 
+    # Unknown website
     if website is None:
         return {
             "domain": domain,
@@ -79,15 +82,35 @@ def check_website(
             "reason": "Website not found in database"
         }
 
-    if website.is_blocked:
+    # Find child's policy for this category
+    policy = (
+        db.query(ChildPolicy)
+        .filter(
+            ChildPolicy.child_id == child_id,
+            ChildPolicy.category == website.category
+        )
+        .first()
+    )
+
+    # No policy exists → allow by default
+    if policy is None:
         return {
-            "domain": website.domain,
-            "status": "BLOCKED",
-            "reason": f"{website.category} website is blocked"
+            "domain": domain,
+            "status": "ALLOWED",
+            "reason": "No policy exists for this category"
         }
 
+    # Policy allows access
+    if policy.is_allowed:
+        return {
+            "domain": domain,
+            "status": "ALLOWED",
+            "reason": f"{website.category} is allowed"
+        }
+
+    # Policy blocks access
     return {
-        "domain": website.domain,
-        "status": "ALLOWED",
-        "reason": f"{website.category} website is allowed"
+        "domain": domain,
+        "status": "BLOCKED",
+        "reason": f"{website.category} is blocked"
     }

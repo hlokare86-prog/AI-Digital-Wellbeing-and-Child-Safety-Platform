@@ -84,27 +84,6 @@ def remove_website(
     }
 
 
-@router.delete("/{website_id}")
-def remove_website(
-    website_id: int,
-    db: Session = Depends(get_db)
-):
-    website = delete_website(
-        db,
-        website_id
-    )
-
-    if website is None:
-        raise HTTPException(
-            status_code=404,
-            detail="Website not found"
-        )
-
-    return {
-        "message": "Website deleted successfully"
-    }
-
-
 @router.post("/check", response_model=DNSCheckResponse)
 def check_domain(
     request: DNSCheckRequest,
@@ -112,7 +91,6 @@ def check_domain(
 ):
     return check_website(
         db,
+        request.child_id,
         request.domain
     )
-
-  
