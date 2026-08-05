@@ -3,6 +3,12 @@ from datetime import datetime, timedelta
 from jose import jwt
 from passlib.context import CryptContext
 
+from app.core.config import (
+    SECRET_KEY,
+    ALGORITHM,
+    ACCESS_TOKEN_EXPIRE_MINUTES,
+)
+
 
 pwd_context = CryptContext(
     schemes=["bcrypt"],
@@ -33,8 +39,3 @@ def create_access_token(data: dict):
         algorithm=ALGORITHM
     )
 
-from app.core.config import (
-    SECRET_KEY,
-    ALGORITHM,
-    ACCESS_TOKEN_EXPIRE_MINUTES,
-)
