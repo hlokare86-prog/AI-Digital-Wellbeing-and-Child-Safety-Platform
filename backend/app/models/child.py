@@ -41,3 +41,7 @@ class Child(Base):
     back_populates="child",
     cascade="all, delete-orphan"
 )
+    screen_time = relationship(
+    "ScreenTime",
+    back_populates="child"
+)

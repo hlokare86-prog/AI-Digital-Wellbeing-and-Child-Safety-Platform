@@ -7,6 +7,10 @@ from app.schemas.dns import WebsiteCreate
 
 from app.services.ai_categorizer import classify_domain
 from app.services.activity_log_service import log_activity
+from app.services.screen_time_service import (
+    check_screen_time,
+    increase_usage
+)
 
 
 def create_website(
@@ -115,6 +119,37 @@ def check_website(
     # No policy -> allow
     if policy is None:
 
+        screen_allowed = check_screen_time(
+            db,
+            child_id
+        )
+
+        if screen_allowed is False:
+
+            log_activity(
+                db=db,
+                child_id=child_id,
+                domain=domain,
+                category=website.category.value,
+                decision="BLOCKED",
+                reason="Daily screen time limit exceeded",
+                source=source,
+                confidence=100
+            )
+
+            return {
+                "domain": domain,
+                "category": website.category,
+                "status": "BLOCKED",
+                "reason": "Daily screen time limit exceeded"
+            }
+
+        if screen_allowed is True:
+            increase_usage(
+                db,
+                child_id
+            )
+
         log_activity(
             db=db,
             child_id=child_id,
@@ -135,6 +170,37 @@ def check_website(
 
     # Policy allows access
     if policy.is_allowed:
+
+        screen_allowed = check_screen_time(
+            db,
+            child_id
+        )
+
+        if screen_allowed is False:
+
+            log_activity(
+                db=db,
+                child_id=child_id,
+                domain=domain,
+                category=website.category.value,
+                decision="BLOCKED",
+                reason="Daily screen time limit exceeded",
+                source=source,
+                confidence=100
+            )
+
+            return {
+                "domain": domain,
+                "category": website.category,
+                "status": "BLOCKED",
+                "reason": "Daily screen time limit exceeded"
+            }
+
+        if screen_allowed is True:
+            increase_usage(
+                db,
+                child_id
+            )
 
         log_activity(
             db=db,
