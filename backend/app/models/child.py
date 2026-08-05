@@ -1,0 +1,43 @@
+from sqlalchemy import Column, Integer, String, ForeignKey
+from sqlalchemy.orm import relationship
+
+from app.database.database import Base
+
+
+class Child(Base):
+    __tablename__ = "children"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    name = Column(String(100), nullable=False)
+
+    age = Column(Integer, nullable=False)
+
+    device_name = Column(String(100), nullable=True)
+
+    parent_id = Column(
+        Integer,
+        ForeignKey("users.id")
+    )
+
+    parent = relationship(
+        "User",
+        back_populates="children"
+    )
+
+    policies = relationship(
+        "ChildPolicy",
+        back_populates="child",
+        cascade="all, delete-orphan"
+    )
+    activity_logs = relationship(
+    "ActivityLog",
+    back_populates="child",
+    cascade="all, delete-orphan"
+    
+)
+    time_policies = relationship(
+    "TimePolicy",
+    back_populates="child",
+    cascade="all, delete-orphan"
+)
