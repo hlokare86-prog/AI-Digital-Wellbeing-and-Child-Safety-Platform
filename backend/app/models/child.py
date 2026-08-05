@@ -30,3 +30,14 @@ class Child(Base):
         back_populates="child",
         cascade="all, delete-orphan"
     )
+    activity_logs = relationship(
+    "ActivityLog",
+    back_populates="child",
+    cascade="all, delete-orphan"
+    
+)
+    time_policies = relationship(
+    "TimePolicy",
+    back_populates="child",
+    cascade="all, delete-orphan"
+)

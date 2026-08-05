@@ -26,7 +26,21 @@ def add_policy(
     policy: ChildPolicyCreate,
     db: Session = Depends(get_db)
 ):
-    return create_policy(db, policy)
+    new_policy = create_policy(db, policy)
+
+    if new_policy is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Child not found"
+        )
+
+    if new_policy == "duplicate":
+        raise HTTPException(
+            status_code=409,
+            detail="Policy already exists for this category"
+        )
+
+    return new_policy
 
 
 @router.get("/child/{child_id}", response_model=List[ChildPolicyResponse])
@@ -65,6 +79,8 @@ def remove_policy(
             status_code=404,
             detail="Policy not found"
         )
+
+    
 
     return {
         "message": "Policy deleted successfully"

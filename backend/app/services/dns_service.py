@@ -1,8 +1,13 @@
 from sqlalchemy.orm import Session
 
 from app.models.website import Website
-from app.schemas.dns import WebsiteCreate
 from app.models.child_policy import ChildPolicy
+
+from app.schemas.dns import WebsiteCreate
+
+from app.services.ai_categorizer import classify_domain
+from app.services.activity_log_service import log_activity
+
 
 def create_website(
     db: Session,
@@ -62,11 +67,15 @@ def delete_website(
 
     return website
 
+
 def check_website(
     db: Session,
     child_id: int,
     domain: str
 ):
+    # Normalize domain
+    domain = domain.lower().strip()
+
     # Find website in database
     website = (
         db.query(Website)
@@ -74,15 +83,26 @@ def check_website(
         .first()
     )
 
-    # Unknown website
-    if website is None:
-        return {
-            "domain": domain,
-            "status": "UNKNOWN",
-            "reason": "Website not found in database"
-        }
+    source = "Database"
 
-    # Find child's policy for this category
+    # Website not found -> AI categorization
+    if website is None:
+
+        category = classify_domain(domain)
+
+        website = Website(
+            domain=domain,
+            category=category,
+            is_blocked=False
+        )
+
+        db.add(website)
+        db.commit()
+        db.refresh(website)
+
+        source = "AI"
+
+    # Find child's policy
     policy = (
         db.query(ChildPolicy)
         .filter(
@@ -92,25 +112,64 @@ def check_website(
         .first()
     )
 
-    # No policy exists → allow by default
+    # No policy -> allow
     if policy is None:
+
+        log_activity(
+            db=db,
+            child_id=child_id,
+            domain=domain,
+            category=website.category.value,
+            decision="ALLOWED",
+            reason="No policy exists for this category",
+            source=source,
+            confidence=100
+        )
+
         return {
             "domain": domain,
+            "category": website.category,
             "status": "ALLOWED",
             "reason": "No policy exists for this category"
         }
 
     # Policy allows access
     if policy.is_allowed:
+
+        log_activity(
+            db=db,
+            child_id=child_id,
+            domain=domain,
+            category=website.category.value,
+            decision="ALLOWED",
+            reason=f"{website.category.value} is allowed",
+            source=source,
+            confidence=100
+        )
+
         return {
             "domain": domain,
+            "category": website.category,
             "status": "ALLOWED",
-            "reason": f"{website.category} is allowed"
+            "reason": f"{website.category.value} is allowed"
         }
 
     # Policy blocks access
+
+    log_activity(
+        db=db,
+        child_id=child_id,
+        domain=domain,
+        category=website.category.value,
+        decision="BLOCKED",
+        reason=f"{website.category.value} is blocked",
+        source=source,
+        confidence=100
+    )
+
     return {
         "domain": domain,
+        "category": website.category,
         "status": "BLOCKED",
-        "reason": f"{website.category} is blocked"
+        "reason": f"{website.category.value} is blocked"
     }

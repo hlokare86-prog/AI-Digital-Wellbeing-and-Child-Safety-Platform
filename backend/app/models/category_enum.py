@@ -1,6 +1,5 @@
 from enum import Enum
 
-
 class WebsiteCategory(str, Enum):
     ADULT = "Adult"
     SOCIAL_MEDIA = "Social Media"
@@ -17,3 +16,6 @@ class WebsiteCategory(str, Enum):
     MESSAGING = "Messaging"
     E_COMMERCE = "E-Commerce"
     OTHER = "Other"
+
+    def __str__(self):
+        return self.value
