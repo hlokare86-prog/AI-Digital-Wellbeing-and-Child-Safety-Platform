@@ -4,11 +4,20 @@ from sqlalchemy import func
 from app.models.activity_log import ActivityLog
 from app.models.screen_time import ScreenTime
 
+from app.services.notification_service import (
+    create_system_notification
+)
+from app.utils.child_validator import get_child_or_404
 
 def calculate_risk_score(
     db: Session,
     child_id: int
 ):
+    get_child_or_404(
+        db,
+        child_id
+    )
+
     total = (
         db.query(func.count(ActivityLog.id))
         .filter(ActivityLog.child_id == child_id)
@@ -74,8 +83,23 @@ def calculate_risk_score(
             "Enable stricter content filtering."
         ]
 
+        # Automatically create a notification
+        create_system_notification(
+            db=db,
+            child_id=child_id,
+            title="High Risk Alert",
+            message=(
+                f"Child safety score dropped to {score}. "
+                "Immediate parental review recommended."
+            ),
+            notification_type="RISK"
+        )
+
     return {
         "child_id": child_id,
+        "total_requests": total,
+        "blocked_requests": blocked,
+        "screen_time_used": used_minutes,
         "safety_score": score,
         "risk_level": level,
         "summary": summary,

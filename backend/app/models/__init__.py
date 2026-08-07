@@ -5,3 +5,5 @@ from app.models.child_policy import ChildPolicy
 from app.models.activity_log import ActivityLog
 from app.models.time_policy import TimePolicy
 from app.models.screen_time import ScreenTime
+from app.models.notification import Notification
+from app.models.safe_search import SafeSearch

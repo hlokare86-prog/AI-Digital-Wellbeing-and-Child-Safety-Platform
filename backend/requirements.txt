@@ -220,3 +220,4 @@ wordcloud==1.9.6
 wrapt==2.2.2
 xgboost==3.3.0
 xyzservices==2026.3.0
+reportlab==26.2.1

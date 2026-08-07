@@ -1,26 +1,32 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import (
+    APIRouter,
+    Depends,
+    HTTPException,
+    status,
+)
 from sqlalchemy.orm import Session
 
 from app.database.database import get_db
 from app.schemas.screen_time import (
     ScreenTimeCreate,
-    ScreenTimeResponse
+    ScreenTimeResponse,
 )
 from app.services.screen_time_service import (
     create_screen_time,
+    delete_screen_time,
     get_child_screen_time,
-    delete_screen_time
 )
 
 router = APIRouter(
     prefix="/screen-time",
-    tags=["Screen Time"]
+    tags=["Screen Time"],
 )
 
 
 @router.post(
     "",
-    response_model=ScreenTimeResponse
+    response_model=ScreenTimeResponse,
+    status_code=status.HTTP_201_CREATED,
 )
 def create(
     screen_time: ScreenTimeCreate,
@@ -33,13 +39,13 @@ def create(
 
     if result is None:
         raise HTTPException(
-            status_code=404,
+            status_code=status.HTTP_404_NOT_FOUND,
             detail="Child not found"
         )
 
     if result == "duplicate":
         raise HTTPException(
-            status_code=400,
+            status_code=status.HTTP_409_CONFLICT,
             detail="Screen time already exists for this child"
         )
 
@@ -48,7 +54,7 @@ def create(
 
 @router.get(
     "/child/{child_id}",
-    response_model=ScreenTimeResponse
+    response_model=ScreenTimeResponse,
 )
 def get_child(
     child_id: int,
@@ -61,7 +67,7 @@ def get_child(
 
     if result is None:
         raise HTTPException(
-            status_code=404,
+            status_code=status.HTTP_404_NOT_FOUND,
             detail="Screen time not found"
         )
 
@@ -80,7 +86,7 @@ def delete(
 
     if result is None:
         raise HTTPException(
-            status_code=404,
+            status_code=status.HTTP_404_NOT_FOUND,
             detail="Screen time not found"
         )
 

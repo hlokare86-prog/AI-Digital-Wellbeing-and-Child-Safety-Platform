@@ -1,63 +1,78 @@
 from typing import List
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import (
+    APIRouter,
+    Depends,
+    HTTPException,
+    status,
+)
 from sqlalchemy.orm import Session
 
 from app.database.database import get_db
 from app.schemas.dns import (
-    WebsiteCreate,
-    WebsiteResponse,
     DNSCheckRequest,
     DNSCheckResponse,
+    WebsiteCreate,
+    WebsiteResponse,
 )
 from app.services.dns_service import (
-    create_website,
-    get_websites,
-    get_website,
-    delete_website,
     check_website,
+    create_website,
+    delete_website,
+    get_website,
+    get_websites,
 )
 
 router = APIRouter(
     prefix="/dns",
-    tags=["DNS Filtering"]
+    tags=["DNS Filtering"],
 )
 
 
-@router.post("", response_model=WebsiteResponse)
+@router.post(
+    "",
+    response_model=WebsiteResponse,
+    status_code=status.HTTP_201_CREATED,
+)
 def add_website(
     website: WebsiteCreate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     new_website = create_website(db, website)
 
     if new_website is None:
         raise HTTPException(
-            status_code=400,
-            detail="Website already exists"
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Website already exists",
         )
 
     return new_website
 
 
-@router.get("", response_model=List[WebsiteResponse])
+@router.get(
+    "",
+    response_model=List[WebsiteResponse],
+)
 def list_websites(
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     return get_websites(db)
 
 
-@router.get("/{website_id}", response_model=WebsiteResponse)
+@router.get(
+    "/{website_id}",
+    response_model=WebsiteResponse,
+)
 def get_single_website(
     website_id: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     website = get_website(db, website_id)
 
     if website is None:
         raise HTTPException(
-            status_code=404,
-            detail="Website not found"
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Website not found",
         )
 
     return website
@@ -66,17 +81,17 @@ def get_single_website(
 @router.delete("/{website_id}")
 def remove_website(
     website_id: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     website = delete_website(
         db,
-        website_id
+        website_id,
     )
 
     if website is None:
         raise HTTPException(
-            status_code=404,
-            detail="Website not found"
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Website not found",
         )
 
     return {
@@ -84,13 +99,16 @@ def remove_website(
     }
 
 
-@router.post("/check", response_model=DNSCheckResponse)
+@router.post(
+    "/check",
+    response_model=DNSCheckResponse,
+)
 def check_domain(
     request: DNSCheckRequest,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     return check_website(
         db,
         request.child_id,
-        request.domain
+        request.domain,
     )

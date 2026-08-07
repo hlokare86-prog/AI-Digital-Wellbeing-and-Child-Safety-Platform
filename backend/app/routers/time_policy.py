@@ -2,6 +2,7 @@ from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+from streamlit import status
 
 from app.database.database import get_db
 from app.schemas.time_policy import (
@@ -36,7 +37,7 @@ def add_time_policy(
 
     if result == "duplicate":
         raise HTTPException(
-            status_code=400,
+            status.HTTP_409_CONFLICT,
             detail="Time policy already exists for this category"
         )
 

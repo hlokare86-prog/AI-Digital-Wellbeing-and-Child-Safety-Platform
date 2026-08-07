@@ -1,26 +1,23 @@
 from datetime import datetime
 
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from app.models.category_enum import WebsiteCategory
-from app.models.child import Child
 from app.models.time_policy import TimePolicy
 from app.schemas.time_policy import TimePolicyCreate
+from app.utils.child_validator import get_child_or_404
 
 
 def create_time_policy(
     db: Session,
     policy: TimePolicyCreate
 ):
-    # Check if child exists
-    child = (
-        db.query(Child)
-        .filter(Child.id == policy.child_id)
-        .first()
+    # Validate child exists
+    get_child_or_404(
+        db,
+        policy.child_id
     )
-
-    if child is None:
-        return None
 
     # Prevent duplicate category policy
     existing = (
@@ -43,17 +40,27 @@ def create_time_policy(
         enabled=policy.enabled
     )
 
-    db.add(new_policy)
-    db.commit()
-    db.refresh(new_policy)
+    try:
+        db.add(new_policy)
+        db.commit()
+        db.refresh(new_policy)
+        return new_policy
 
-    return new_policy
+    except SQLAlchemyError:
+        db.rollback()
+        raise
 
 
 def get_child_time_policies(
     db: Session,
     child_id: int
 ):
+    # Validate child exists
+    get_child_or_404(
+        db,
+        child_id
+    )
+
     return (
         db.query(TimePolicy)
         .filter(TimePolicy.child_id == child_id)
@@ -76,15 +83,22 @@ def delete_time_policy(
     db: Session,
     policy_id: int
 ):
-    policy = get_time_policy(db, policy_id)
+    policy = get_time_policy(
+        db,
+        policy_id
+    )
 
     if policy is None:
         return None
 
-    db.delete(policy)
-    db.commit()
+    try:
+        db.delete(policy)
+        db.commit()
+        return policy
 
-    return policy
+    except SQLAlchemyError:
+        db.rollback()
+        raise
 
 
 def is_time_allowed(
@@ -99,12 +113,18 @@ def is_time_allowed(
         None  -> No enabled time policy exists
     """
 
+    # Validate child exists
+    get_child_or_404(
+        db,
+        child_id
+    )
+
     policy = (
         db.query(TimePolicy)
         .filter(
             TimePolicy.child_id == child_id,
             TimePolicy.category == category,
-            TimePolicy.enabled == True
+            TimePolicy.enabled.is_(True)
         )
         .first()
     )

@@ -4,11 +4,18 @@ from sqlalchemy.orm import Session
 from app.models.activity_log import ActivityLog
 from app.models.screen_time import ScreenTime
 
+from app.utils.child_validator import get_child_or_404
+
 
 def get_dashboard_summary(
     db: Session,
     child_id: int
 ):
+    get_child_or_404(
+        db,
+        child_id
+    )
+
     # Total website requests
     total_requests = (
         db.query(func.count(ActivityLog.id))
@@ -36,7 +43,6 @@ def get_dashboard_summary(
         .scalar()
     ) or 0
 
-    # Screen time
     screen = (
         db.query(ScreenTime)
         .filter(ScreenTime.child_id == child_id)
@@ -48,12 +54,11 @@ def get_dashboard_summary(
     if screen:
         screen_time_used = screen.used_minutes
 
-    # Safety Score
     if total_requests == 0:
         safety_score = 100
     else:
         safety_score = int(
-            ((allowed_requests / total_requests) * 100)
+            (allowed_requests / total_requests) * 100
         )
 
     return {

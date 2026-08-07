@@ -11,6 +11,9 @@ from app.services.screen_time_service import (
     check_screen_time,
     increase_usage
 )
+from app.services.notification_service import (
+    create_system_notification
+)
 
 
 def create_website(
@@ -137,6 +140,14 @@ def check_website(
                 confidence=100
             )
 
+            create_system_notification(
+                db=db,
+                child_id=child_id,
+                title="Screen Time Limit Reached",
+                message="Daily screen time limit exceeded.",
+                notification_type="SCREEN_TIME"
+            )
+
             return {
                 "domain": domain,
                 "category": website.category,
@@ -189,6 +200,14 @@ def check_website(
                 confidence=100
             )
 
+            create_system_notification(
+                db=db,
+                child_id=child_id,
+                title="Screen Time Limit Reached",
+                message="Daily screen time limit exceeded.",
+                notification_type="SCREEN_TIME"
+            )
+
             return {
                 "domain": domain,
                 "category": website.category,
@@ -231,6 +250,14 @@ def check_website(
         reason=f"{website.category.value} is blocked",
         source=source,
         confidence=100
+    )
+
+    create_system_notification(
+        db=db,
+        child_id=child_id,
+        title="Blocked Website",
+        message=f"Attempted to access {domain}",
+        notification_type="SECURITY"
     )
 
     return {

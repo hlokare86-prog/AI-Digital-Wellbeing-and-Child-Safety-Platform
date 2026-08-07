@@ -15,25 +15,28 @@ class ScreenTime(Base):
         index=True
     )
 
-    child_id: Mapped[int] = mapped_column(
-        ForeignKey("children.id"),
-        nullable=False
-    )
+    child_id = mapped_column(
+    ForeignKey("children.id"),
+    nullable=False,
+    index=True
+)
 
     daily_limit_minutes: Mapped[int] = mapped_column(
         Integer,
         nullable=False
     )
 
-    used_minutes: Mapped[int] = mapped_column(
-        Integer,
-        default=0
-    )
+    used_minutes = mapped_column(
+    Integer,
+    default=0,
+    nullable=False
+)
 
-    enabled: Mapped[bool] = mapped_column(
-        Boolean,
-        default=True
-    )
+    enabled = mapped_column(
+    Boolean,
+    default=True,
+    nullable=False
+)
 
     last_reset: Mapped[datetime] = mapped_column(
         DateTime,

@@ -52,3 +52,15 @@ class TimePolicy(Base):
         "Child",
         back_populates="time_policies"
     )
+    child_id = Column(
+    Integer,
+    ForeignKey("children.id"),
+    nullable=False,
+    index=True
+)
+
+category = Column(
+    Enum(WebsiteCategory),
+    nullable=False,
+    index=True
+)

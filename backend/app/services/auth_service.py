@@ -1,13 +1,24 @@
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
+from app.core.security import (
+    create_access_token,
+    hash_password,
+    verify_password,
+)
 from app.models.user import User
 from app.schemas.user import UserCreate
-from app.core.security import hash_password
 
 
-def create_user(db: Session, user: UserCreate):
-
-    existing_user = db.query(User).filter(User.email == user.email).first()
+def create_user(
+    db: Session,
+    user: UserCreate
+):
+    existing_user = (
+        db.query(User)
+        .filter(User.email == user.email)
+        .first()
+    )
 
     if existing_user:
         return None
@@ -19,33 +30,42 @@ def create_user(db: Session, user: UserCreate):
         role="parent"
     )
 
-    db.add(new_user)
-    db.commit()
-    db.refresh(new_user)
+    try:
+        db.add(new_user)
+        db.commit()
+        db.refresh(new_user)
+        return new_user
 
-    return new_user
+    except SQLAlchemyError:
+        db.rollback()
+        raise
 
 
-from app.core.security import verify_password, create_access_token
+def login_user(
+    db: Session,
+    email: str,
+    password: str
+):
+    user = (
+        db.query(User)
+        .filter(User.email == email)
+        .first()
+    )
 
-
-def login_user(db: Session, email: str, password: str):
-
-    user = db.query(User).filter(
-        User.email == email
-    ).first()
-
-    if not user:
+    if user is None:
         return None
 
-    if not verify_password(password, user.password):
+    if not verify_password(
+        password,
+        user.password
+    ):
         return None
 
-    token = create_access_token(
+    access_token = create_access_token(
         {"sub": user.email}
     )
 
     return {
-        "access_token": token,
+        "access_token": access_token,
         "token_type": "bearer"
     }

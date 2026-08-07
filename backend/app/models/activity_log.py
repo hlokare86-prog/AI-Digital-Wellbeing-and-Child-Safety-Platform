@@ -66,3 +66,15 @@ class ActivityLog(Base):
         "Child",
         back_populates="activity_logs"
     )
+    child_id = Column(
+    Integer,
+    ForeignKey("children.id"),
+    nullable=False,
+    index=True
+)
+
+timestamp = Column(
+    DateTime(timezone=True),
+    server_default=func.now(),
+    index=True
+)

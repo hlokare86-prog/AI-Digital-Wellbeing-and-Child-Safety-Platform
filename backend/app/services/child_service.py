@@ -1,3 +1,4 @@
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from app.models.child import Child
@@ -21,11 +22,15 @@ def create_child(
         parent_id=current_user.id
     )
 
-    db.add(new_child)
-    db.commit()
-    db.refresh(new_child)
+    try:
+        db.add(new_child)
+        db.commit()
+        db.refresh(new_child)
+        return new_child
 
-    return new_child
+    except SQLAlchemyError:
+        db.rollback()
+        raise
 
 
 def get_children(
@@ -49,7 +54,7 @@ def get_child(
     current_user: User
 ):
     """
-    Get one child by ID.
+    Get one child by ID belonging to the logged-in parent.
     """
 
     return (
@@ -80,7 +85,11 @@ def delete_child(
     if child is None:
         return None
 
-    db.delete(child)
-    db.commit()
+    try:
+        db.delete(child)
+        db.commit()
+        return child
 
-    return child
+    except SQLAlchemyError:
+        db.rollback()
+        raise

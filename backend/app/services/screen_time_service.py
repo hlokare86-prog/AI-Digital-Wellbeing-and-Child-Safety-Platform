@@ -1,24 +1,22 @@
 from datetime import datetime
 
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
-from app.models.child import Child
 from app.models.screen_time import ScreenTime
 from app.schemas.screen_time import ScreenTimeCreate
+from app.utils.child_validator import get_child_or_404
 
 
 def create_screen_time(
     db: Session,
     screen_time: ScreenTimeCreate
 ):
-    child = (
-        db.query(Child)
-        .filter(Child.id == screen_time.child_id)
-        .first()
+    # Validate child exists
+    get_child_or_404(
+        db,
+        screen_time.child_id
     )
-
-    if child is None:
-        return None
 
     existing = (
         db.query(ScreenTime)
@@ -35,11 +33,15 @@ def create_screen_time(
         enabled=screen_time.enabled
     )
 
-    db.add(new_limit)
-    db.commit()
-    db.refresh(new_limit)
+    try:
+        db.add(new_limit)
+        db.commit()
+        db.refresh(new_limit)
+        return new_limit
 
-    return new_limit
+    except SQLAlchemyError:
+        db.rollback()
+        raise
 
 
 def get_child_screen_time(
@@ -66,17 +68,24 @@ def delete_screen_time(
     if limit is None:
         return None
 
-    db.delete(limit)
-    db.commit()
+    try:
+        db.delete(limit)
+        db.commit()
+        return limit
 
-    return limit
+    except SQLAlchemyError:
+        db.rollback()
+        raise
 
 
 def reset_if_new_day(
     db: Session,
     child_id: int
 ):
-    limit = get_child_screen_time(db, child_id)
+    limit = get_child_screen_time(
+        db,
+        child_id
+    )
 
     if limit is None:
         return
@@ -87,7 +96,12 @@ def reset_if_new_day(
         limit.used_minutes = 0
         limit.last_reset = datetime.now()
 
-        db.commit()
+        try:
+            db.commit()
+
+        except SQLAlchemyError:
+            db.rollback()
+            raise
 
 
 def increase_usage(
@@ -95,23 +109,37 @@ def increase_usage(
     child_id: int,
     minutes: int = 1
 ):
-    limit = get_child_screen_time(db, child_id)
+    limit = get_child_screen_time(
+        db,
+        child_id
+    )
 
     if limit is None:
         return
 
-    reset_if_new_day(db, child_id)
+    reset_if_new_day(
+        db,
+        child_id
+    )
 
     limit.used_minutes += minutes
 
-    db.commit()
+    try:
+        db.commit()
+
+    except SQLAlchemyError:
+        db.rollback()
+        raise
 
 
 def check_screen_time(
     db: Session,
     child_id: int
 ):
-    limit = get_child_screen_time(db, child_id)
+    limit = get_child_screen_time(
+        db,
+        child_id
+    )
 
     if limit is None:
         return None
@@ -119,7 +147,10 @@ def check_screen_time(
     if not limit.enabled:
         return None
 
-    reset_if_new_day(db, child_id)
+    reset_if_new_day(
+        db,
+        child_id
+    )
 
     if limit.used_minutes >= limit.daily_limit_minutes:
         return False
