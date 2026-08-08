@@ -9,16 +9,17 @@ from app.services.ai_categorizer import classify_domain
 from app.services.activity_log_service import log_activity
 from app.services.screen_time_service import (
     check_screen_time,
-    increase_usage
+    increase_usage,
 )
 from app.services.notification_service import (
-    create_system_notification
+    create_system_notification,
 )
+from app.services.time_policy_service import is_time_allowed
 
 
 def create_website(
     db: Session,
-    website: WebsiteCreate
+    website: WebsiteCreate,
 ):
     existing = (
         db.query(Website)
@@ -32,7 +33,7 @@ def create_website(
     new_website = Website(
         domain=website.domain,
         category=website.category,
-        is_blocked=website.is_blocked
+        is_blocked=website.is_blocked,
     )
 
     db.add(new_website)
@@ -48,7 +49,7 @@ def get_websites(db: Session):
 
 def get_website(
     db: Session,
-    website_id: int
+    website_id: int,
 ):
     return (
         db.query(Website)
@@ -59,11 +60,11 @@ def get_website(
 
 def delete_website(
     db: Session,
-    website_id: int
+    website_id: int,
 ):
     website = get_website(
         db,
-        website_id
+        website_id,
     )
 
     if website is None:
@@ -78,12 +79,16 @@ def delete_website(
 def check_website(
     db: Session,
     child_id: int,
-    domain: str
+    domain: str,
 ):
-    # Normalize domain
+    # ---------------------------------------------------------
+    # 1. Normalize domain
+    # ---------------------------------------------------------
     domain = domain.lower().strip()
 
-    # Find website in database
+    # ---------------------------------------------------------
+    # 2. Find website in database
+    # ---------------------------------------------------------
     website = (
         db.query(Website)
         .filter(Website.domain == domain)
@@ -92,15 +97,16 @@ def check_website(
 
     source = "Database"
 
-    # Website not found -> AI categorization
+    # ---------------------------------------------------------
+    # 3. Website not found -> AI categorization
+    # ---------------------------------------------------------
     if website is None:
-
         category = classify_domain(domain)
 
         website = Website(
             domain=domain,
             category=category,
-            is_blocked=False
+            is_blocked=False,
         )
 
         db.add(website)
@@ -109,160 +115,165 @@ def check_website(
 
         source = "AI"
 
-    # Find child's policy
+    # ---------------------------------------------------------
+    # 4. Check child's category policy
+    # ---------------------------------------------------------
     policy = (
         db.query(ChildPolicy)
         .filter(
             ChildPolicy.child_id == child_id,
-            ChildPolicy.category == website.category
+            ChildPolicy.category == website.category,
         )
         .first()
     )
 
-    # No policy -> allow
+    # ---------------------------------------------------------
+    # 5. Explicit category policy blocks access
+    # ---------------------------------------------------------
+    if policy is not None and not policy.is_allowed:
+
+        log_activity(
+            db=db,
+            child_id=child_id,
+            domain=domain,
+            category=website.category.value,
+            decision="BLOCKED",
+            reason=f"{website.category.value} is blocked",
+            source=source,
+            confidence=100,
+        )
+
+        create_system_notification(
+            db=db,
+            child_id=child_id,
+            title="Blocked Website",
+            message=f"Attempted to access {domain}",
+            notification_type="SECURITY",
+        )
+
+        return {
+            "domain": domain,
+            "category": website.category,
+            "status": "BLOCKED",
+            "reason": f"{website.category.value} is blocked",
+        }
+
+    # ---------------------------------------------------------
+    # 6. Check time policy
+    #
+    # True  -> access is inside allowed time
+    # False -> access is outside allowed time
+    # None  -> no enabled time policy exists
+    # ---------------------------------------------------------
+    time_allowed = is_time_allowed(
+        db=db,
+        child_id=child_id,
+        category=website.category,
+    )
+
+    if time_allowed is False:
+
+        log_activity(
+            db=db,
+            child_id=child_id,
+            domain=domain,
+            category=website.category.value,
+            decision="BLOCKED",
+            reason="Website access is outside the allowed time window",
+            source=source,
+            confidence=100,
+        )
+
+        create_system_notification(
+            db=db,
+            child_id=child_id,
+            title="Time Policy Restriction",
+            message=(
+                f"Access to {domain} is not allowed at this time."
+            ),
+            notification_type="TIME_POLICY",
+        )
+
+        return {
+            "domain": domain,
+            "category": website.category,
+            "status": "BLOCKED",
+            "reason": "Website access is outside the allowed time window",
+        }
+
+    # ---------------------------------------------------------
+    # 7. Check screen time
+    # ---------------------------------------------------------
+    screen_allowed = check_screen_time(
+        db,
+        child_id,
+    )
+
+    if screen_allowed is False:
+
+        log_activity(
+            db=db,
+            child_id=child_id,
+            domain=domain,
+            category=website.category.value,
+            decision="BLOCKED",
+            reason="Daily screen time limit exceeded",
+            source=source,
+            confidence=100,
+        )
+
+        create_system_notification(
+            db=db,
+            child_id=child_id,
+            title="Screen Time Limit Reached",
+            message="Daily screen time limit exceeded.",
+            notification_type="SCREEN_TIME",
+        )
+
+        return {
+            "domain": domain,
+            "category": website.category,
+            "status": "BLOCKED",
+            "reason": "Daily screen time limit exceeded",
+        }
+
+    # ---------------------------------------------------------
+    # 8. Increase screen-time usage
+    # ---------------------------------------------------------
+    if screen_allowed is True:
+        increase_usage(
+            db,
+            child_id,
+        )
+
+    # ---------------------------------------------------------
+    # 9. Determine allowed-access reason
+    # ---------------------------------------------------------
     if policy is None:
+        reason = "No category policy exists; access allowed"
+    else:
+        reason = f"{website.category.value} is allowed"
 
-        screen_allowed = check_screen_time(
-            db,
-            child_id
-        )
-
-        if screen_allowed is False:
-
-            log_activity(
-                db=db,
-                child_id=child_id,
-                domain=domain,
-                category=website.category.value,
-                decision="BLOCKED",
-                reason="Daily screen time limit exceeded",
-                source=source,
-                confidence=100
-            )
-
-            create_system_notification(
-                db=db,
-                child_id=child_id,
-                title="Screen Time Limit Reached",
-                message="Daily screen time limit exceeded.",
-                notification_type="SCREEN_TIME"
-            )
-
-            return {
-                "domain": domain,
-                "category": website.category,
-                "status": "BLOCKED",
-                "reason": "Daily screen time limit exceeded"
-            }
-
-        if screen_allowed is True:
-            increase_usage(
-                db,
-                child_id
-            )
-
-        log_activity(
-            db=db,
-            child_id=child_id,
-            domain=domain,
-            category=website.category.value,
-            decision="ALLOWED",
-            reason="No policy exists for this category",
-            source=source,
-            confidence=100
-        )
-
-        return {
-            "domain": domain,
-            "category": website.category,
-            "status": "ALLOWED",
-            "reason": "No policy exists for this category"
-        }
-
-    # Policy allows access
-    if policy.is_allowed:
-
-        screen_allowed = check_screen_time(
-            db,
-            child_id
-        )
-
-        if screen_allowed is False:
-
-            log_activity(
-                db=db,
-                child_id=child_id,
-                domain=domain,
-                category=website.category.value,
-                decision="BLOCKED",
-                reason="Daily screen time limit exceeded",
-                source=source,
-                confidence=100
-            )
-
-            create_system_notification(
-                db=db,
-                child_id=child_id,
-                title="Screen Time Limit Reached",
-                message="Daily screen time limit exceeded.",
-                notification_type="SCREEN_TIME"
-            )
-
-            return {
-                "domain": domain,
-                "category": website.category,
-                "status": "BLOCKED",
-                "reason": "Daily screen time limit exceeded"
-            }
-
-        if screen_allowed is True:
-            increase_usage(
-                db,
-                child_id
-            )
-
-        log_activity(
-            db=db,
-            child_id=child_id,
-            domain=domain,
-            category=website.category.value,
-            decision="ALLOWED",
-            reason=f"{website.category.value} is allowed",
-            source=source,
-            confidence=100
-        )
-
-        return {
-            "domain": domain,
-            "category": website.category,
-            "status": "ALLOWED",
-            "reason": f"{website.category.value} is allowed"
-        }
-
-    # Policy blocks access
-
+    # ---------------------------------------------------------
+    # 10. Log allowed activity
+    # ---------------------------------------------------------
     log_activity(
         db=db,
         child_id=child_id,
         domain=domain,
         category=website.category.value,
-        decision="BLOCKED",
-        reason=f"{website.category.value} is blocked",
+        decision="ALLOWED",
+        reason=reason,
         source=source,
-        confidence=100
+        confidence=100,
     )
 
-    create_system_notification(
-        db=db,
-        child_id=child_id,
-        title="Blocked Website",
-        message=f"Attempted to access {domain}",
-        notification_type="SECURITY"
-    )
-
+    # ---------------------------------------------------------
+    # 11. Return final decision
+    # ---------------------------------------------------------
     return {
         "domain": domain,
         "category": website.category,
-        "status": "BLOCKED",
-        "reason": f"{website.category.value} is blocked"
+        "status": "ALLOWED",
+        "reason": reason,
     }

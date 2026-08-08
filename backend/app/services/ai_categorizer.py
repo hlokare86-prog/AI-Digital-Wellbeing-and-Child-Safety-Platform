@@ -1,18 +1,26 @@
+import os
+
+from dotenv import load_dotenv
+from openai import OpenAI
+
 from app.models.category_enum import WebsiteCategory
 
 
-def classify_domain(domain: str) -> WebsiteCategory:
-    """
-    AI categorization service.
-    Version 1:
-    Rule-based categorizer.
+# Load environment variables from .env
+load_dotenv()
 
-    Later:
-    - ML model
-    - LLM
-    """
+# Create OpenAI client
+client = OpenAI(
+    api_key=os.getenv("OPENAI_API_KEY")
+)
 
-    domain = domain.lower()
+
+# ---------------------------------------------------------
+# Rule-based categorization
+# ---------------------------------------------------------
+
+def rule_based_category(domain: str):
+    domain = domain.lower().strip()
 
     social_media = [
         "facebook",
@@ -23,7 +31,7 @@ def classify_domain(domain: str) -> WebsiteCategory:
         "tiktok",
         "reddit",
         "discord",
-        "threads"
+        "threads",
     ]
 
     streaming = [
@@ -31,14 +39,14 @@ def classify_domain(domain: str) -> WebsiteCategory:
         "netflix",
         "primevideo",
         "hotstar",
-        "spotify"
+        "spotify",
     ]
 
     gaming = [
         "steam",
         "epicgames",
         "roblox",
-        "minecraft"
+        "minecraft",
     ]
 
     education = [
@@ -47,7 +55,7 @@ def classify_domain(domain: str) -> WebsiteCategory:
         "udemy",
         "khanacademy",
         "w3schools",
-        "geeksforgeeks"
+        "geeksforgeeks",
     ]
 
     adult = [
@@ -55,13 +63,13 @@ def classify_domain(domain: str) -> WebsiteCategory:
         "xxx",
         "xvideos",
         "xnxx",
-        "pornhub"
+        "pornhub",
     ]
 
     gambling = [
         "bet",
         "casino",
-        "gambling"
+        "gambling",
     ]
 
     if any(site in domain for site in adult):
@@ -82,4 +90,82 @@ def classify_domain(domain: str) -> WebsiteCategory:
     if any(site in domain for site in education):
         return WebsiteCategory.EDUCATION
 
-    return WebsiteCategory.OTHER
+    return None
+
+
+# ---------------------------------------------------------
+# AI categorization
+# ---------------------------------------------------------
+
+def ai_category(domain: str) -> WebsiteCategory:
+
+    if not os.getenv("OPENAI_API_KEY"):
+        return WebsiteCategory.OTHER
+
+    try:
+
+        response = client.responses.create(
+            model="gpt-5.5",
+            instructions="""
+You are a website safety classification system.
+
+Classify the given website domain into exactly ONE
+of these categories:
+
+SOCIAL_MEDIA
+STREAMING
+GAMING
+EDUCATION
+ADULT
+GAMBLING
+OTHER
+
+Return ONLY the category name.
+Do not explain your answer.
+""",
+            input=f"Website domain: {domain}",
+        )
+
+        result = response.output_text.strip().upper()
+
+        category_map = {
+            "SOCIAL_MEDIA": WebsiteCategory.SOCIAL_MEDIA,
+            "STREAMING": WebsiteCategory.STREAMING,
+            "GAMING": WebsiteCategory.GAMING,
+            "EDUCATION": WebsiteCategory.EDUCATION,
+            "ADULT": WebsiteCategory.ADULT,
+            "GAMBLING": WebsiteCategory.GAMBLING,
+            "OTHER": WebsiteCategory.OTHER,
+        }
+
+        return category_map.get(
+            result,
+            WebsiteCategory.OTHER
+        )
+
+    except Exception as e:
+
+        print(
+            f"AI categorization failed for {domain}: {e}"
+        )
+
+        # Safe fallback
+        return WebsiteCategory.OTHER
+
+
+# ---------------------------------------------------------
+# Main categorization function
+# ---------------------------------------------------------
+
+def classify_domain(domain: str) -> WebsiteCategory:
+
+    domain = domain.lower().strip()
+
+    # First try fast local rules
+    category = rule_based_category(domain)
+
+    if category is not None:
+        return category
+
+    # Unknown domain -> OpenAI
+    return ai_category(domain)
