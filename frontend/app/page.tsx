@@ -35,6 +35,13 @@ import {
   Zap,
 } from "lucide-react";
 
+import { students } from "./data/students";
+import type { Student } from "./data/students";
+
+/* =========================================================
+   TYPES
+========================================================= */
+
 type PageName =
   | "Dashboard Overview"
   | "Wellbeing Analytics"
@@ -63,6 +70,17 @@ type DomainResult = {
   threat_score?: number;
   message?: string;
 };
+
+/* =========================================================
+   CONSTANTS
+========================================================= */
+
+const STORAGE_KEY = "selectedStudentId";
+const STUDENT_EVENT = "selectedStudentChanged";
+
+/* =========================================================
+   NAVIGATION
+========================================================= */
 
 const navigation: {
   label: PageName;
@@ -146,26 +164,32 @@ const searchItems: {
   },
 ];
 
-const children: Child[] = [
-  {
-    name: "Maya Jenkins",
-    age: "Age 9",
-    device: "Chromebook 11",
-    initials: "MJ",
-  },
-  {
-    name: "Leo Jenkins",
-    age: "Age 12",
-    device: 'iPad Pro 11"',
-    initials: "LJ",
-  },
-  {
-    name: "Sam Jenkins",
-    age: "Age 15",
-    device: "MacBook Air M2",
-    initials: "SJ",
-  },
-];
+/* =========================================================
+   HELPERS
+========================================================= */
+
+function getStudentInitials(name: string): string {
+  return name
+    .split(" ")
+    .filter(Boolean)
+    .map((part) => part[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+}
+
+function studentToChild(student: Student): Child {
+  return {
+    name: student.name,
+    age: `Age ${student.age}`,
+    device: "Connected Device",
+    initials: getStudentInitials(student.name),
+  };
+}
+
+/* =========================================================
+   SIDEBAR ITEM
+========================================================= */
 
 function SidebarItem({
   icon,
@@ -203,6 +227,10 @@ function SidebarItem({
   );
 }
 
+/* =========================================================
+   PROFILE INFO
+========================================================= */
+
 function ProfileInfo({
   label,
   value,
@@ -222,6 +250,10 @@ function ProfileInfo({
     </div>
   );
 }
+
+/* =========================================================
+   GUARDIAN PROFILE
+========================================================= */
 
 function GuardianProfilePage({
   openPage,
@@ -273,7 +305,10 @@ function GuardianProfilePage({
           <ProfileInfo label="Full Name" value="Sarah Jenkins" />
           <ProfileInfo label="Role" value="Primary Guardian" />
           <ProfileInfo label="Account Type" value="Parent Account" />
-          <ProfileInfo label="Protected Children" value="3 Children" />
+          <ProfileInfo
+            label="Protected Children"
+            value={`${students.length} Children`}
+          />
           <ProfileInfo label="Account Status" value="Active" />
           <ProfileInfo label="AI Protection" value="Enabled" />
         </div>
@@ -291,8 +326,8 @@ function GuardianProfilePage({
             </h3>
 
             <p className="mt-1 text-sm leading-6 text-blue-600">
-              Your children are protected by continuous AI safety monitoring
-              and wellbeing analysis.
+              Your children are protected by continuous AI safety
+              monitoring and wellbeing analysis.
             </p>
           </div>
         </div>
@@ -325,12 +360,24 @@ function GuardianProfilePage({
   );
 }
 
-function ScreenTimePage() {
-  const rows = [
-    { name: "Maya Jenkins", time: "3h 12m", percent: 62 },
-    { name: "Leo Jenkins", time: "4h 05m", percent: 78 },
-    { name: "Sam Jenkins", time: "4h 48m", percent: 91 },
-  ];
+/* =========================================================
+   SCREEN TIME
+========================================================= */
+
+function ScreenTimePage({
+  selectedStudent,
+}: {
+  selectedStudent: Student;
+}) {
+  const rows = students.map((student) => ({
+    name: student.name,
+    time: student.screenTime,
+    percent: Math.min(Number(student.wellbeing) + 10, 100),
+  }));
+
+  const selectedRow = rows.find(
+    (row) => row.name === selectedStudent.name
+  );
 
   return (
     <div className="space-y-6">
@@ -370,11 +417,15 @@ function ScreenTimePage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs text-slate-500">
-                Family Average
+                Selected Child
               </p>
 
               <p className="mt-1 text-xl font-bold text-slate-900">
-                3h 42m
+                {selectedStudent.name}
+              </p>
+
+              <p className="mt-1 text-sm text-slate-500">
+                Screen Time: {selectedRow?.time ?? "N/A"}
               </p>
             </div>
 
@@ -393,6 +444,10 @@ function ScreenTimePage() {
     </div>
   );
 }
+
+/* =========================================================
+   REPORT ROW
+========================================================= */
 
 function ReportRow({
   child,
@@ -437,95 +492,153 @@ function ReportRow({
   );
 }
 
-function ReportsPage() {
+/* =========================================================
+   REPORTS
+========================================================= */
+
+function ReportsPage({
+  selectedStudent,
+}: {
+  selectedStudent: Student;
+}) {
   const [reportType, setReportType] = useState("Weekly");
-  const [selectedChild, setSelectedChild] =
-    useState("All Children");
+
+  // Supports Student objects even if aiProtection is not yet
+  // included in the Student type.
+  const studentData = selectedStudent as Student & {
+    aiProtection?: string;
+  };
+
+  const aiProtection = studentData.aiProtection ?? "Protected";
 
   const cards = [
     {
       title: "Digital Wellbeing",
-      value: "82%",
+      value: `${selectedStudent.wellbeing}%`,
       label: "Wellbeing Score",
       icon: <TrendingUp size={22} />,
     },
     {
       title: "Screen Time",
-      value: "3h 42m",
-      label: "Daily Average",
+      value: selectedStudent.screenTime,
+      label: "Daily Usage",
       icon: <Clock3 size={22} />,
     },
     {
       title: "Safety Monitoring",
-      value: "97%",
-      label: "Protection Rate",
+      value: aiProtection,
+      label: "AI Protection",
       icon: <ShieldCheck size={22} />,
     },
     {
       title: "Risk Alerts",
-      value: "3",
-      label: "Active Alerts",
+      value: selectedStudent.status,
+      label: "Current Status",
       icon: <AlertTriangle size={22} />,
+    },
+  ];
+
+  const wellbeing = Number(selectedStudent.wellbeing);
+
+  const trendData = [
+    {
+      day: "Mon",
+      value: Math.max(0, wellbeing - 8),
+    },
+    {
+      day: "Tue",
+      value: Math.max(0, wellbeing - 5),
+    },
+    {
+      day: "Wed",
+      value: Math.max(0, wellbeing - 3),
+    },
+    {
+      day: "Thu",
+      value: Math.max(0, wellbeing - 1),
+    },
+    {
+      day: "Fri",
+      value: Math.min(100, wellbeing + 2),
+    },
+    {
+      day: "Sat",
+      value: wellbeing,
+    },
+    {
+      day: "Sun",
+      value: wellbeing,
     },
   ];
 
   return (
     <div className="space-y-6">
+
+      {/* =====================================================
+          HEADER
+      ===================================================== */}
       <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+
           <div>
             <h2 className="text-xl font-bold text-slate-900">
               Reports Overview
             </h2>
 
             <p className="mt-1 text-sm text-slate-500">
-              Review wellbeing, safety and screen-time activity.
+              Report for{" "}
+              <span className="font-semibold text-slate-700">
+                {selectedStudent.name}
+              </span>
+              .
             </p>
           </div>
 
           <div className="flex flex-wrap gap-3">
-            <select
-              value={selectedChild}
-              onChange={(e) => setSelectedChild(e.target.value)}
-              className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm"
-            >
-              <option>All Children</option>
-              <option>Maya Jenkins</option>
-              <option>Leo Jenkins</option>
-              <option>Sam Jenkins</option>
-            </select>
 
+            {/* Selected Child */}
+            <div className="rounded-xl bg-blue-50 px-4 py-2.5 text-sm font-semibold text-blue-600">
+              {selectedStudent.name}
+            </div>
+
+            {/* Report Type */}
             <select
               value={reportType}
               onChange={(e) => setReportType(e.target.value)}
-              className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm"
+              className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
             >
-              <option>Daily</option>
-              <option>Weekly</option>
-              <option>Monthly</option>
+              <option value="Daily">Daily</option>
+              <option value="Weekly">Weekly</option>
+              <option value="Monthly">Monthly</option>
             </select>
 
+            {/* Export */}
             <button
               type="button"
               onClick={() =>
-                alert(
-                  `${reportType} report prepared for ${selectedChild}.`
+                window.alert(
+                  `${reportType} report prepared for ${selectedStudent.name}.`
                 )
               }
-              className="flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700"
+              className="flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700"
             >
               <FileText size={16} />
               Export Report
             </button>
+
           </div>
         </div>
       </div>
 
+      {/* =====================================================
+          SUMMARY CARDS
+      ===================================================== */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+
         {cards.map((card) => (
           <div
             key={card.title}
-            className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
+            className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
           >
             <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
               {card.icon}
@@ -544,78 +657,108 @@ function ReportsPage() {
             </p>
           </div>
         ))}
+
       </div>
 
+      {/* =====================================================
+          WELLBEING TREND
+      ===================================================== */}
       <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+
         <div className="flex items-center justify-between">
+
           <div>
             <h3 className="text-lg font-bold text-slate-900">
               Wellbeing Trend
             </h3>
 
             <p className="mt-1 text-sm text-slate-500">
-              Weekly wellbeing score
+              Weekly wellbeing score for {selectedStudent.name}
             </p>
           </div>
 
-          <TrendingUp className="text-blue-600" />
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50">
+            <TrendingUp className="text-blue-600" size={20} />
+          </div>
+
         </div>
 
-        <div className="mt-8 flex h-48 items-end justify-between gap-3 border-b border-l border-slate-200 px-4">
-          {[
-            ["Mon", 68],
-            ["Tue", 74],
-            ["Wed", 71],
-            ["Thu", 79],
-            ["Fri", 84],
-            ["Sat", 80],
-            ["Sun", 82],
-          ].map(([day, value]) => (
-            <div
-              key={day}
-              className="flex h-full flex-1 flex-col items-center justify-end"
-            >
+        {/* Chart */}
+        <div className="mt-8">
+
+          <div className="flex h-48 items-end gap-3 border-b border-l border-slate-200 px-4">
+
+            {trendData.map((item) => (
               <div
-                className="w-full max-w-[35px] rounded-t-lg bg-blue-500"
-                style={{
-                  height: `${Number(value) * 1.65}px`,
-                  maxHeight: "165px",
-                }}
-              />
+                key={item.day}
+                className="flex h-full flex-1 flex-col items-center justify-end"
+              >
 
-              <span className="mt-2 text-[10px] text-slate-400">
-                {day}
-              </span>
-            </div>
-          ))}
+                {/* Value */}
+                <span className="mb-2 text-[10px] font-semibold text-slate-400">
+                  {item.value}
+                </span>
+
+                {/* Bar */}
+                <div
+                  className="w-full max-w-[35px] rounded-t-lg bg-blue-500 transition-all hover:bg-blue-600"
+                  style={{
+                    height: `${item.value * 1.5}px`,
+                    maxHeight: "150px",
+                  }}
+                />
+
+                {/* Day */}
+                <span className="mt-2 text-[10px] text-slate-400">
+                  {item.day}
+                </span>
+
+              </div>
+            ))}
+
+          </div>
+
         </div>
 
-        <div className="mt-5 flex justify-between">
+        {/* Chart Footer */}
+        <div className="mt-6 flex items-center justify-between">
+
           <div>
             <p className="text-xs text-slate-400">
               Current Score
             </p>
 
             <p className="text-xl font-bold text-blue-600">
-              82 / 100
+              {selectedStudent.wellbeing} / 100
             </p>
           </div>
 
           <div className="text-right">
+
             <p className="text-xs text-slate-400">
-              Weekly Change
+              Child
             </p>
 
-            <p className="font-bold text-green-600">
-              +8.4%
+            <p className="font-bold text-slate-700">
+              {selectedStudent.name}
             </p>
+
           </div>
+
         </div>
+
       </div>
 
+      {/* =====================================================
+          SAFETY & AI MONITORING
+      ===================================================== */}
       <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+
         <div className="flex items-center gap-3">
-          <ShieldCheck className="text-blue-600" />
+
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50">
+            <ShieldCheck className="text-blue-600" size={20} />
+          </div>
 
           <div>
             <h3 className="text-lg font-bold text-slate-900">
@@ -623,68 +766,86 @@ function ReportsPage() {
             </h3>
 
             <p className="text-sm text-slate-500">
-              AI-powered safety monitoring summary.
+              AI-powered safety monitoring summary for{" "}
+              {selectedStudent.name}.
             </p>
           </div>
+
         </div>
 
+        {/* Table */}
         <div className="mt-6 overflow-x-auto">
+
           <table className="w-full min-w-[600px]">
+
             <thead>
               <tr className="border-b border-slate-100 text-left">
-                <th className="px-3 py-3 text-xs text-slate-400">
+
+                <th className="px-3 py-3 text-xs font-semibold uppercase tracking-wide text-slate-400">
                   Child
                 </th>
 
-                <th className="px-3 py-3 text-xs text-slate-400">
+                <th className="px-3 py-3 text-xs font-semibold uppercase tracking-wide text-slate-400">
                   Report
                 </th>
 
-                <th className="px-3 py-3 text-xs text-slate-400">
+                <th className="px-3 py-3 text-xs font-semibold uppercase tracking-wide text-slate-400">
                   Status
                 </th>
 
-                <th className="px-3 py-3 text-xs text-slate-400">
+                <th className="px-3 py-3 text-xs font-semibold uppercase tracking-wide text-slate-400">
                   Date
                 </th>
+
               </tr>
             </thead>
 
             <tbody>
+
               <ReportRow
-                child="Maya Jenkins"
+                child={selectedStudent.name}
                 report="Weekly Wellbeing"
                 status="Healthy"
                 date="Today"
               />
 
               <ReportRow
-                child="Leo Jenkins"
+                child={selectedStudent.name}
                 report="Screen Time"
                 status="Reviewed"
                 date="Yesterday"
               />
 
               <ReportRow
-                child="Sam Jenkins"
+                child={selectedStudent.name}
                 report="Safety Monitoring"
                 status="Attention"
                 date="Yesterday"
               />
+
             </tbody>
+
           </table>
+
         </div>
+
       </div>
+
     </div>
   );
 }
+/* =========================================================
+   MAIN PAGE
+========================================================= */
 
 export default function Home() {
   const [adminName, setAdminName] = useState("Admin");
+
   const [activeItem, setActiveItem] =
     useState<PageName>("Dashboard Overview");
 
   const [sidebarOpen, setSidebarOpen] = useState(true);
+
   const [searchQuery, setSearchQuery] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
 
@@ -697,16 +858,18 @@ export default function Home() {
   const [notificationsOpen, setNotificationsOpen] =
     useState(false);
 
-  const [profileOpen, setProfileOpen] =
-    useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
 
-  const [adminMenuOpen, setAdminMenuOpen] =
-    useState(false);
+  const [adminMenuOpen, setAdminMenuOpen] = useState(false);
 
   const [focusMode, setFocusMode] = useState(false);
 
-  const [selectedChild, setSelectedChild] =
-    useState<Child>(children[0]);
+  const [selectedStudent, setSelectedStudent] =
+    useState<Student | null>(null);
+
+  /* =========================================================
+     LOAD ADMIN NAME
+  ========================================================= */
 
   useEffect(() => {
     const savedName =
@@ -717,10 +880,116 @@ export default function Home() {
     }
   }, []);
 
-  const filteredSearchItems = useMemo(() => {
-    const query = searchQuery.trim().toLowerCase();
+  /* =========================================================
+     LOAD SELECTED STUDENT
+  ========================================================= */
 
-    if (!query) return [];
+  useEffect(() => {
+    if (!students.length) {
+      return;
+    }
+
+    const savedId =
+      window.localStorage.getItem(STORAGE_KEY);
+
+    if (savedId) {
+      const student = students.find(
+        (item) => item.id === Number(savedId)
+      );
+
+      if (student) {
+        setSelectedStudent(student);
+        return;
+      }
+    }
+
+    setSelectedStudent(students[0]);
+  }, []);
+
+  /* =========================================================
+     LISTEN FOR STUDENT CHANGES
+  ========================================================= */
+
+  useEffect(() => {
+    const handleStudentChange = () => {
+      const savedId =
+        window.localStorage.getItem(STORAGE_KEY);
+
+      if (!savedId) {
+        return;
+      }
+
+      const student = students.find(
+        (item) => item.id === Number(savedId)
+      );
+
+      if (student) {
+        setSelectedStudent(student);
+      }
+    };
+
+    window.addEventListener(
+      STUDENT_EVENT,
+      handleStudentChange
+    );
+
+    window.addEventListener(
+      "storage",
+      handleStudentChange
+    );
+
+    return () => {
+      window.removeEventListener(
+        STUDENT_EVENT,
+        handleStudentChange
+      );
+
+      window.removeEventListener(
+        "storage",
+        handleStudentChange
+      );
+    };
+  }, []);
+
+  /* =========================================================
+     SAFETY CHECK
+  ========================================================= */
+
+  if (!selectedStudent) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-50">
+        <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm">
+          <ShieldCheck className="mx-auto h-12 w-12 text-blue-600" />
+
+          <h2 className="mt-4 text-xl font-bold text-slate-900">
+            No student found
+          </h2>
+
+          <p className="mt-2 text-sm text-slate-500">
+            Please add at least one student to your students data.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  /* =========================================================
+     SELECTED CHILD
+  ========================================================= */
+
+  const selectedChild = studentToChild(selectedStudent);
+
+  /* =========================================================
+     SEARCH
+  ========================================================= */
+
+  const filteredSearchItems = useMemo(() => {
+    const query =
+      searchQuery.trim().toLowerCase();
+
+    if (!query) {
+      return [];
+    }
 
     return searchItems.filter(
       (item) =>
@@ -728,6 +997,10 @@ export default function Home() {
         item.description.toLowerCase().includes(query)
     );
   }, [searchQuery]);
+
+  /* =========================================================
+     OPEN PAGE
+  ========================================================= */
 
   const openPage = (page: PageName) => {
     setActiveItem(page);
@@ -746,10 +1019,35 @@ export default function Home() {
     }
   };
 
+  /* =========================================================
+     SELECT STUDENT
+  ========================================================= */
+
+  const selectStudent = (student: Student) => {
+    setSelectedStudent(student);
+
+    window.localStorage.setItem(
+      STORAGE_KEY,
+      String(student.id)
+    );
+
+    window.dispatchEvent(
+      new Event(STUDENT_EVENT)
+    );
+
+    setChildSelectorOpen(false);
+  };
+
+  /* =========================================================
+     CHECK DOMAIN
+  ========================================================= */
+
   const checkDomain = async (value: string) => {
     const domain = value.trim();
 
-    if (!domain) return;
+    if (!domain) {
+      return;
+    }
 
     setDomainResult(null);
     setSearchOpen(true);
@@ -766,7 +1064,8 @@ export default function Home() {
         throw new Error("API request failed");
       }
 
-      const data = await response.json();
+      const data =
+        (await response.json()) as DomainResult;
 
       setDomainResult(data);
     } catch {
@@ -781,59 +1080,87 @@ export default function Home() {
     }
   };
 
+  /* =========================================================
+     LOGOUT
+  ========================================================= */
+
   const handleLogout = () => {
     window.localStorage.removeItem("adminName");
     window.localStorage.removeItem("adminAge");
     window.localStorage.removeItem("adminGender");
     window.localStorage.removeItem("adminBio");
+    window.localStorage.removeItem(STORAGE_KEY);
 
     window.location.href = "/login";
   };
 
+  /* =========================================================
+     RENDER PAGE
+  ========================================================= */
+
   const renderPage = () => {
-    switch (activeItem) {
-      case "Dashboard Overview":
-        return <DashboardOverview />;
+  switch (activeItem) {
+    case "Dashboard Overview":
+      return <DashboardOverview />;
 
-      case "Wellbeing Analytics":
-        return <WellbeingAnalytics />;
+    case "Wellbeing Analytics":
+      return <WellbeingAnalytics />;
 
-      case "Children & Devices":
-        return <ChildrenDevices />;
+    case "Children & Devices":
+      return <ChildrenDevices />;
 
-      case "AI Content Filters":
-        return <AIContentFilters />;
+    case "AI Content Filters":
+      return <AIContentFilters />;
 
-      case "AI Risk Detection":
-        return <AIRiskDetection />;
+    case "AI Risk Detection":
+      return <AIRiskDetection />;
 
-      case "Live Risk Alerts":
-        return <LiveRiskAlerts />;
+    case "Live Risk Alerts":
+      return <LiveRiskAlerts />;
 
-      case "Guardian Settings":
-        return <GuardianSettings />;
+    case "Guardian Settings":
+      return <GuardianSettings />;
 
-      case "Profile":
-        return <GuardianProfilePage openPage={openPage} />;
+    case "Profile":
+      return (
+        <GuardianProfilePage
+          openPage={openPage}
+        />
+      );
 
-      case "Reports":
-        return <ReportsPage />;
+    case "Reports":
+      return (
+        <ReportsPage
+          selectedStudent={selectedStudent}
+        />
+      );
 
-      case "Screen Time":
-        return <ScreenTimePage />;
+    case "Screen Time":
+      return (
+        <ScreenTimePage
+          selectedStudent={selectedStudent}
+        />
+      );
 
-      default:
-        return <DashboardOverview />;
-    }
-  };
+    default:
+      return <DashboardOverview />;
+  }
+};
+
+  /* =========================================================
+     JSX
+  ========================================================= */
 
   return (
     <div
       className={`min-h-screen ${
-        focusMode ? "bg-slate-100" : "bg-slate-50"
+        focusMode
+          ? "bg-slate-100"
+          : "bg-slate-50"
       }`}
     >
       {/* MOBILE OVERLAY */}
+
       {sidebarOpen && (
         <button
           type="button"
@@ -843,9 +1170,13 @@ export default function Home() {
         />
       )}
 
-      {/* TOP BAR */}
+      {/* =====================================================
+          TOP BAR
+      ===================================================== */}
+
       <header className="fixed left-0 right-0 top-0 z-[100] flex h-[88px] items-center border-b border-slate-200 bg-white px-4 shadow-sm md:px-6">
         {/* LOGO */}
+
         <div className="flex shrink-0 items-center gap-3">
           <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 shadow-lg shadow-blue-200">
             <Shield className="h-6 w-6 text-white" />
@@ -869,6 +1200,7 @@ export default function Home() {
         </div>
 
         {/* CHILD SELECTOR */}
+
         <div className="relative ml-6 hidden shrink-0 md:block">
           <button
             type="button"
@@ -876,6 +1208,7 @@ export default function Home() {
               setChildSelectorOpen(
                 (value) => !value
               );
+
               setProfileOpen(false);
               setNotificationsOpen(false);
               setAdminMenuOpen(false);
@@ -898,7 +1231,7 @@ export default function Home() {
             </div>
 
             <ChevronDown
-              className={`h-4 w-4 text-slate-500 ${
+              className={`h-4 w-4 text-slate-500 transition-transform ${
                 childSelectorOpen
                   ? "rotate-180"
                   : ""
@@ -914,73 +1247,54 @@ export default function Home() {
                 </p>
               </div>
 
-              <button
-                type="button"
-                onClick={() => {
-                  setSelectedChild({
-                    name: "All Children",
-                    age: "Overview",
-                    device: "3 Children",
-                    initials: "ALL",
-                  });
+              {students.map((student) => {
+                const child =
+                  studentToChild(student);
 
-                  setChildSelectorOpen(false);
-                }}
-                className="flex w-full items-center gap-3 px-5 py-4 text-left hover:bg-slate-50"
-              >
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 text-xs font-bold text-blue-600">
-                  ALL
-                </div>
+                const isSelected =
+                  selectedStudent.id ===
+                  student.id;
 
-                <div>
-                  <p className="font-semibold text-slate-800">
-                    All Children
-                  </p>
+                return (
+                  <button
+                    key={student.id}
+                    type="button"
+                    onClick={() =>
+                      selectStudent(student)
+                    }
+                    className={`flex w-full items-center gap-3 px-5 py-4 text-left ${
+                      isSelected
+                        ? "bg-blue-50"
+                        : "hover:bg-slate-50"
+                    }`}
+                  >
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-cyan-100 text-sm font-bold text-cyan-700">
+                      {child.initials}
+                    </div>
 
-                  <p className="text-xs text-slate-500">
-                    View family overview
-                  </p>
-                </div>
-              </button>
+                    <div>
+                      <p className="font-semibold text-slate-800">
+                        {child.name}
+                      </p>
 
-              {children.map((child) => (
-                <button
-                  key={child.name}
-                  type="button"
-                  onClick={() => {
-                    setSelectedChild(child);
-                    setChildSelectorOpen(false);
-                  }}
-                  className={`flex w-full items-center gap-3 px-5 py-4 text-left ${
-                    selectedChild.name === child.name
-                      ? "bg-blue-50"
-                      : "hover:bg-slate-50"
-                  }`}
-                >
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-cyan-100 text-sm font-bold text-cyan-700">
-                    {child.initials}
-                  </div>
+                      <p className="text-xs text-slate-500">
+                        {child.age} •{" "}
+                        {child.device}
+                      </p>
+                    </div>
 
-                  <div>
-                    <p className="font-semibold text-slate-800">
-                      {child.name}
-                    </p>
-
-                    <p className="text-xs text-slate-500">
-                      {child.age} • {child.device}
-                    </p>
-                  </div>
-
-                  {selectedChild.name === child.name && (
-                    <CheckCircle2 className="ml-auto h-5 w-5 text-blue-600" />
-                  )}
-                </button>
-              ))}
+                    {isSelected && (
+                      <CheckCircle2 className="ml-auto h-5 w-5 text-blue-600" />
+                    )}
+                  </button>
+                );
+              })}
             </div>
           )}
         </div>
 
         {/* SEARCH */}
+
         <div className="relative ml-5 hidden min-w-0 flex-1 md:flex">
           <div className="flex w-full max-w-[430px] items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 focus-within:border-blue-300 focus-within:bg-white">
             <Search className="h-5 w-5 text-slate-400" />
@@ -988,9 +1302,14 @@ export default function Home() {
             <input
               type="text"
               value={searchQuery}
-              onFocus={() => setSearchOpen(true)}
+              onFocus={() =>
+                setSearchOpen(true)
+              }
               onChange={(e) => {
-                setSearchQuery(e.target.value);
+                setSearchQuery(
+                  e.target.value
+                );
+
                 setSearchOpen(true);
                 setDomainResult(null);
               }}
@@ -1006,7 +1325,9 @@ export default function Home() {
                   const value =
                     e.currentTarget.value.trim();
 
-                  if (!value) return;
+                  if (!value) {
+                    return;
+                  }
 
                   const looksLikeDomain =
                     value.includes(".") ||
@@ -1016,8 +1337,12 @@ export default function Home() {
 
                   if (looksLikeDomain) {
                     checkDomain(value);
-                  } else if (filteredSearchItems[0]) {
-                    openPage(filteredSearchItems[0].name);
+                  } else if (
+                    filteredSearchItems.length > 0
+                  ) {
+                    openPage(
+                      filteredSearchItems[0].name
+                    );
                   }
                 }
               }}
@@ -1027,6 +1352,7 @@ export default function Home() {
           </div>
 
           {/* SEARCH DROPDOWN */}
+
           {searchOpen && searchQuery.trim() && (
             <div className="absolute top-14 z-[500] w-full max-w-[430px] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
               {domainResult ? (
@@ -1071,7 +1397,8 @@ export default function Home() {
                           </p>
 
                           <p className="mt-1 text-xs font-semibold text-red-700">
-                            {domainResult.threat_score ?? 0}
+                            {domainResult.threat_score ??
+                              0}
                           </p>
                         </div>
                       </div>
@@ -1106,7 +1433,8 @@ export default function Home() {
                         </p>
 
                         <p className="mt-1 text-xs text-green-600">
-                          This domain is allowed by the DNS filtering policy.
+                          This domain is allowed by the
+                          DNS filtering policy.
                         </p>
                       </div>
                     </div>
@@ -1165,7 +1493,9 @@ export default function Home() {
                   <button
                     key={item.name}
                     type="button"
-                    onClick={() => openPage(item.name)}
+                    onClick={() =>
+                      openPage(item.name)
+                    }
                     className="flex w-full items-start gap-3 border-b border-slate-100 px-4 py-3 text-left hover:bg-blue-50"
                   >
                     <Search className="mt-0.5 h-4 w-4 text-blue-600" />
@@ -1184,7 +1514,9 @@ export default function Home() {
               ) : (
                 <button
                   type="button"
-                  onClick={() => checkDomain(searchQuery)}
+                  onClick={() =>
+                    checkDomain(searchQuery)
+                  }
                   className="w-full p-4 text-left hover:bg-blue-50"
                 >
                   <div className="flex items-center gap-3">
@@ -1209,8 +1541,10 @@ export default function Home() {
         </div>
 
         {/* RIGHT SIDE */}
+
         <div className="ml-auto flex items-center gap-2">
           {/* NOTIFICATIONS */}
+
           <div className="relative">
             <button
               type="button"
@@ -1219,6 +1553,7 @@ export default function Home() {
                 setNotificationsOpen(
                   (value) => !value
                 );
+
                 setProfileOpen(false);
                 setChildSelectorOpen(false);
                 setAdminMenuOpen(false);
@@ -1254,7 +1589,8 @@ export default function Home() {
                     </p>
 
                     <p className="mt-1 text-xs text-red-600">
-                      Review the latest child safety events.
+                      Review the latest child safety
+                      events.
                     </p>
                   </div>
 
@@ -1274,6 +1610,7 @@ export default function Home() {
           </div>
 
           {/* PROFILE */}
+
           <div className="relative">
             <button
               type="button"
@@ -1281,6 +1618,7 @@ export default function Home() {
                 setProfileOpen(
                   (value) => !value
                 );
+
                 setNotificationsOpen(false);
                 setChildSelectorOpen(false);
                 setAdminMenuOpen(false);
@@ -1302,8 +1640,10 @@ export default function Home() {
               </div>
 
               <ChevronDown
-                className={`h-4 w-4 text-slate-400 ${
-                  profileOpen ? "rotate-180" : ""
+                className={`h-4 w-4 text-slate-400 transition-transform ${
+                  profileOpen
+                    ? "rotate-180"
+                    : ""
                 }`}
               />
             </button>
@@ -1361,7 +1701,10 @@ export default function Home() {
         </div>
       </header>
 
-      {/* SIDEBAR */}
+      {/* =====================================================
+          SIDEBAR
+      ===================================================== */}
+
       <aside
         className={`fixed left-0 top-[88px] z-50 flex h-[calc(100vh-88px)] w-72 flex-col border-r border-slate-200 bg-white transition-transform ${
           sidebarOpen
@@ -1386,7 +1729,9 @@ export default function Home() {
 
           <button
             type="button"
-            onClick={() => setSidebarOpen(false)}
+            onClick={() =>
+              setSidebarOpen(false)
+            }
             className="ml-auto rounded-lg p-2 text-slate-400 hover:bg-slate-100 lg:hidden"
           >
             <X size={18} />
@@ -1405,7 +1750,9 @@ export default function Home() {
                 icon={item.icon}
                 text={item.label}
                 badge={item.badge}
-                active={activeItem === item.label}
+                active={
+                  activeItem === item.label
+                }
                 onClick={() =>
                   openPage(item.label)
                 }
@@ -1425,7 +1772,8 @@ export default function Home() {
             </div>
 
             <p className="mt-2 text-xs leading-5 text-blue-600">
-              Your children are protected by continuous AI safety monitoring.
+              Your children are protected by continuous
+              AI safety monitoring.
             </p>
           </div>
 
@@ -1440,7 +1788,9 @@ export default function Home() {
               className="flex w-full items-center gap-3 rounded-xl p-2 text-left hover:bg-slate-50"
             >
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-900 text-sm font-bold text-white">
-                {adminName.charAt(0).toUpperCase()}
+                {adminName
+                  .charAt(0)
+                  .toUpperCase()}
               </div>
 
               <div className="min-w-0 flex-1">
@@ -1454,7 +1804,7 @@ export default function Home() {
               </div>
 
               <ChevronDown
-                className={`h-4 w-4 ${
+                className={`h-4 w-4 transition-transform ${
                   adminMenuOpen
                     ? "rotate-180"
                     : ""
@@ -1505,10 +1855,15 @@ export default function Home() {
         </div>
       </aside>
 
-      {/* MAIN CONTENT */}
+      {/* =====================================================
+          MAIN CONTENT
+      ===================================================== */}
+
       <div
         className={`transition-all ${
-          sidebarOpen ? "lg:pl-72" : "lg:pl-0"
+          sidebarOpen
+            ? "lg:pl-72"
+            : "lg:pl-0"
         }`}
       >
         <main className="p-5 pt-[108px] md:p-8 md:pt-[112px]">
@@ -1516,7 +1871,9 @@ export default function Home() {
             <div>
               <div className="flex items-center gap-2 text-sm text-slate-400">
                 <LayoutGrid size={15} />
+
                 <span>/</span>
+
                 <span>{activeItem}</span>
               </div>
 
@@ -1525,7 +1882,11 @@ export default function Home() {
               </h2>
 
               <p className="mt-1 text-sm text-slate-500">
-                AI-powered wellbeing and child safety monitoring.
+                Viewing data for{" "}
+                <span className="font-semibold text-blue-600">
+                  {selectedStudent.name}
+                </span>
+                .
               </p>
             </div>
 
@@ -1556,8 +1917,8 @@ export default function Home() {
               <button
                 type="button"
                 onClick={() =>
-                  alert(
-                    "AI safety scan started successfully."
+                  window.alert(
+                    `AI safety scan started for ${selectedStudent.name}.`
                   )
                 }
                 className="rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700"
@@ -1566,6 +1927,7 @@ export default function Home() {
                   size={16}
                   className="mr-2 inline"
                 />
+
                 Run AI Scan
               </button>
             </div>
