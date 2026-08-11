@@ -1,585 +1,722 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
-import {
-  User,
-  ChevronDown,
-  Check,
-  ArrowLeft,
-} from "lucide-react";
 
-/* =========================================================
-   CHILD DATA
-========================================================= */
-
-type Child = {
-  id: string;
+type Student = {
+  id: number;
   name: string;
-  grade: string;
   age: number;
+  device: string;
+  school: string;
+  className: string;
+  email: string;
+  status: string;
   wellbeing: number;
   screenTime: string;
-  dailyLimit: string;
-  activeDevice: string;
-  alerts: number;
-  appsMonitored: number;
   avatar: string;
 };
 
-const children: Child[] = [
+const students: Student[] = [
   {
-    id: "leo",
-    name: "Leo Jenkins",
-    grade: "7th Grade",
-    age: 12,
-    wellbeing: 92,
-    screenTime: "2h 25m",
-    dailyLimit: "3h 00m",
-    activeDevice: 'iPad Pro (11")',
-    alerts: 1,
-    appsMonitored: 18,
-    avatar: "👦",
-  },
-
-  {
-    id: "maya",
+    id: 1,
     name: "Maya Jenkins",
-    grade: "4th Grade",
     age: 9,
-    wellbeing: 96,
-    screenTime: "1h 5m",
-    dailyLimit: "2h 00m",
-    activeDevice: "Chromebook 11",
-    alerts: 0,
-    appsMonitored: 14,
-    avatar: "👧",
+    device: "Chromebook 11",
+    school: "Green Valley School",
+    className: "4",
+    email: "maya.jenkins@student.com",
+    status: "Active",
+    wellbeing: 86,
+    screenTime: "3h 25m",
+    avatar: "MJ",
   },
-
   {
-    id: "sam",
+    id: 2,
+    name: "Leo Jenkins",
+    age: 12,
+    device: 'iPad Pro 11"',
+    school: "Green Valley School",
+    className: "7",
+    email: "leo.jenkins@student.com",
+    status: "Active",
+    wellbeing: 82,
+    screenTime: "4h 10m",
+    avatar: "LJ",
+  },
+  {
+    id: 3,
     name: "Sam Jenkins",
-    grade: "10th Grade",
     age: 15,
-    wellbeing: 88,
-    screenTime: "3h 35m",
-    dailyLimit: "4h 00m",
-    activeDevice: "MacBook Air M2",
-    alerts: 2,
-    appsMonitored: 21,
-    avatar: "🧒",
+    device: "MacBook Air M2",
+    school: "Green Valley High School",
+    className: "10",
+    email: "sam.jenkins@student.com",
+    status: "Active",
+    wellbeing: 91,
+    screenTime: "3h 45m",
+    avatar: "SJ",
   },
 ];
 
-/* =========================================================
-   PROFILE PAGE
-========================================================= */
+const parent = {
+  name: "Sarah Jenkins",
+  role: "Primary Guardian",
+  accountType: "Parent Account",
+};
 
 export default function ProfilePage() {
-  /* -------------------------------------------------------
-     SELECTED CHILD
-     This stays in React state.
-     Nothing is added to the URL.
-  ------------------------------------------------------- */
+  const [selectedStudent, setSelectedStudent] = useState(students[0]);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [editMode, setEditMode] = useState(false);
 
-  const [selectedChild, setSelectedChild] =
-    useState<Child>(children[0]);
-
-  const [profileMenuOpen, setProfileMenuOpen] =
-    useState(false);
-
-  /* -------------------------------------------------------
-     CHANGE CHILD
-  ------------------------------------------------------- */
-
-  const selectChild = (child: Child) => {
-    setSelectedChild(child);
-    setProfileMenuOpen(false);
+  const changeStudent = (student: Student) => {
+    setSelectedStudent(student);
+    setMenuOpen(false);
   };
 
   return (
-    <main className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-[#f7f9fc] text-slate-900">
 
-      {/* ===================================================
-          TOP BAR
-      =================================================== */}
+      {/* ================================================= */}
+      {/* TOP HEADER */}
+      {/* ================================================= */}
 
-      <header className="border-b border-slate-200 bg-white">
-        <div className="mx-auto flex h-[82px] max-w-7xl items-center justify-between px-5 md:px-8">
+      <header className="h-[76px] bg-white border-b border-slate-200 flex items-center px-7">
 
-          {/* LEFT */}
+        {/* Logo */}
+        <div className="flex items-center gap-3 w-[235px]">
 
-          <div>
-            <Link
-              href="/"
-              className="text-sm font-medium text-blue-600 hover:text-blue-700"
-            >
-              Parent Dashboard
-            </Link>
-
-            <h1 className="mt-1 text-2xl font-bold text-slate-900">
-              Child Profile
-            </h1>
+          <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white text-lg">
+            🛡
           </div>
 
-          {/* =================================================
-              RIGHT TOP GUARDIAN PROFILE
-          ================================================= */}
+          <div>
+            <h1 className="font-bold text-[17px]">
+              AI Wellbeing
+            </h1>
 
-          <div className="relative">
+            <p className="text-[10px] text-slate-400">
+              Child Safety & Mental Health Engine
+            </p>
+          </div>
 
-            <button
-              type="button"
-              onClick={() =>
-                setProfileMenuOpen(
-                  !profileMenuOpen
-                )
-              }
-              className="flex items-center gap-3 rounded-xl px-2 py-1.5 transition hover:bg-slate-50"
-            >
+        </div>
 
-              {/* Guardian Avatar */}
 
-              <div className="flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-slate-100">
-                <User
-                  size={21}
-                  className="text-slate-500"
-                />
-              </div>
+        {/* STUDENT SELECTOR */}
+        <div className="relative ml-3">
 
-              {/* Guardian Name */}
+          <button
+            onClick={() => setMenuOpen(!menuOpen)}
+            className="w-[285px] h-[56px] bg-white border border-slate-200 rounded-xl flex items-center px-4 gap-3 hover:bg-slate-50 transition"
+          >
 
-              <div className="hidden text-left sm:block">
-                <p className="text-sm font-semibold text-slate-800">
-                  Sarah Jenkins
+            <div className="w-9 h-9 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold">
+              {selectedStudent.avatar}
+            </div>
+
+            <div className="text-left flex-1">
+
+              <p className="text-sm font-semibold">
+                {selectedStudent.name}
+              </p>
+
+              <p className="text-[11px] text-slate-400">
+                Age {selectedStudent.age} • {selectedStudent.device}
+              </p>
+
+            </div>
+
+            <span className="text-slate-400">
+              {menuOpen ? "⌃" : "⌄"}
+            </span>
+
+          </button>
+
+
+          {/* DROPDOWN */}
+          {menuOpen && (
+            <div className="absolute top-[62px] left-0 w-[330px] bg-white border border-slate-200 rounded-2xl shadow-xl z-50 overflow-hidden">
+
+              <div className="px-5 py-4 border-b border-slate-100">
+
+                <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">
+                  Select Child
                 </p>
 
-                <p className="mt-0.5 text-xs font-medium text-emerald-600">
-                  Primary Guardian
-                </p>
               </div>
 
-              <ChevronDown
-                size={17}
-                className={`text-slate-400 transition ${
-                  profileMenuOpen
-                    ? "rotate-180"
-                    : ""
-                }`}
-              />
-            </button>
 
-            {/* =================================================
-                CHILD SELECTION DROPDOWN
-            ================================================= */}
+              {/* All Children */}
+              <button
+                onClick={() => setMenuOpen(false)}
+                className="w-full flex items-center gap-4 px-5 py-4 hover:bg-slate-50 text-left"
+              >
 
-            {profileMenuOpen && (
-              <div className="absolute right-0 top-[65px] z-50 w-[330px] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl">
+                <div className="w-11 h-11 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold">
+                  ALL
+                </div>
 
-                <div className="border-b border-slate-100 px-5 py-4">
-                  <p className="text-xs font-bold uppercase tracking-wider text-slate-400">
-                    Select Child Profile
+                <div>
+                  <p className="font-semibold text-[15px]">
+                    All Children
+                  </p>
+
+                  <p className="text-xs text-slate-400 mt-1">
+                    View family overview
                   </p>
                 </div>
 
-                {children.map((child) => {
-                  const selected =
-                    selectedChild.id === child.id;
+              </button>
 
-                  return (
-                    <button
-                      key={child.id}
-                      type="button"
-                      onClick={() =>
-                        selectChild(child)
-                      }
-                      className={`flex w-full items-center gap-3 px-5 py-3 text-left transition ${
-                        selected
-                          ? "bg-blue-50"
-                          : "hover:bg-slate-50"
-                      }`}
-                    >
 
-                      {/* Avatar */}
+              {/* Students */}
+              {students.map((student) => (
 
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-50 text-xl">
-                        {child.avatar}
-                      </div>
+                <button
+                  key={student.id}
+                  onClick={() => changeStudent(student)}
+                  className={`w-full flex items-center gap-4 px-5 py-4 text-left transition
+                    ${
+                      selectedStudent.id === student.id
+                        ? "bg-blue-50"
+                        : "hover:bg-slate-50"
+                    }
+                  `}
+                >
 
-                      {/* Child information */}
+                  <div className="w-11 h-11 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-sm font-bold">
+                    {student.avatar}
+                  </div>
 
-                      <div className="min-w-0 flex-1">
+                  <div className="flex-1">
 
-                        <p className="text-sm font-semibold text-slate-800">
-                          {child.name}
-                        </p>
+                    <p className="font-semibold text-[15px]">
+                      {student.name}
+                    </p>
 
-                        <p className="text-xs text-slate-500">
-                          {child.grade} • Age {child.age}
-                        </p>
+                    <p className="text-xs text-slate-400 mt-1">
+                      Age {student.age} • {student.device}
+                    </p>
 
-                      </div>
+                  </div>
 
-                      {/* Selected icon */}
+                  {selectedStudent.id === student.id && (
+                    <div className="w-6 h-6 rounded-full border-2 border-blue-500 flex items-center justify-center text-blue-500 text-xs">
+                      ✓
+                    </div>
+                  )}
 
-                      {selected && (
-                        <div className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-blue-600 text-blue-600">
-                          <Check size={14} />
-                        </div>
-                      )}
+                </button>
 
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-          </div>
+              ))}
+
+            </div>
+          )}
+
         </div>
+
+
+        {/* SEARCH */}
+        <div className="ml-5 flex-1 max-w-[360px]">
+
+          <div className="h-[46px] border border-slate-200 rounded-xl flex items-center px-4 gap-3">
+
+            <span className="text-slate-400">
+              🔍
+            </span>
+
+            <input
+              placeholder="Search apps, domains, alerts..."
+              className="outline-none w-full text-sm"
+            />
+
+          </div>
+
+        </div>
+
+
+        {/* PARENT ACCOUNT */}
+        <div className="ml-auto flex items-center gap-4">
+
+          <button className="text-slate-500">
+            🔔
+          </button>
+
+          <div className="w-9 h-9 rounded-full bg-slate-900 text-white flex items-center justify-center text-xs">
+            SJ
+          </div>
+
+          <div>
+
+            <p className="text-sm font-semibold">
+              {parent.name}
+            </p>
+
+            <p className="text-[10px] text-slate-400">
+              {parent.role}
+            </p>
+
+          </div>
+
+        </div>
+
       </header>
 
-      {/* ===================================================
-          PAGE CONTENT
-      =================================================== */}
 
-      <div className="mx-auto max-w-7xl px-5 py-8 md:px-8">
+      {/* ================================================= */}
+      {/* BODY */}
+      {/* ================================================= */}
 
-        {/* Description */}
+      <div className="flex">
 
-        <p className="mb-7 text-sm text-slate-500">
-          Manage your child's wellbeing and safety information.
-        </p>
 
-        {/* =================================================
-            TOP PROFILE SECTION
-        ================================================= */}
+        {/* ================================================= */}
+        {/* SIDEBAR */}
+        {/* ================================================= */}
 
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <aside className="w-[235px] min-h-[calc(100vh-76px)] bg-white border-r border-slate-200 p-5">
 
-          {/* =================================================
-              CHILD CARD
-          ================================================= */}
+          <p className="text-[10px] font-bold text-slate-400 uppercase mb-4">
+            Main Menu
+          </p>
 
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
 
-            <div className="flex items-center gap-4">
+          <nav className="space-y-1">
 
-              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-blue-50 text-3xl">
-                {selectedChild.avatar}
+            <SidebarItem icon="▦" text="Dashboard Overview" />
+
+            <SidebarItem icon="⌁" text="Wellbeing Analytics" />
+
+            <SidebarItem icon="♙" text="Children & Devices" />
+
+            <SidebarItem icon="✓" text="AI Content Filters" />
+
+            <SidebarItem icon="◉" text="AI Risk Detection" />
+
+            <SidebarItem
+              icon="⚠"
+              text="Live Risk Alerts"
+              badge="3"
+            />
+
+            <SidebarItem icon="⚙" text="Guardian Settings" />
+
+          </nav>
+
+
+          {/* Protection */}
+          <div className="mt-[220px] bg-blue-50 rounded-xl p-4">
+
+            <p className="text-xs font-bold text-blue-700">
+              ⚡ AI Protection Active
+            </p>
+
+            <p className="text-[10px] text-blue-500 leading-4 mt-2">
+              {selectedStudent.name} is protected by continuous
+              AI safety monitoring.
+            </p>
+
+          </div>
+
+
+          {/* Parent */}
+          <div className="mt-5 pt-4 border-t border-slate-200">
+
+            <div className="flex items-center gap-3">
+
+              <div className="w-9 h-9 bg-slate-900 rounded-full text-white flex items-center justify-center text-xs">
+                SJ
               </div>
 
               <div>
-                <h2 className="text-xl font-bold text-slate-900">
-                  {selectedChild.name}
-                </h2>
 
-                <p className="mt-1 text-sm text-slate-500">
-                  {selectedChild.grade} • Age{" "}
-                  {selectedChild.age}
+                <p className="text-sm font-semibold">
+                  {parent.name}
                 </p>
 
-                <div className="mt-2 inline-flex rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-600">
-                  Wellbeing Score:{" "}
-                  {selectedChild.wellbeing}/100
-                </div>
+                <p className="text-[10px] text-slate-400">
+                  {parent.accountType}
+                </p>
+
               </div>
 
             </div>
 
-            <div className="mt-6 rounded-xl bg-slate-50 p-4">
-
-              <div className="flex justify-between py-1.5 text-sm">
-                <span className="text-slate-500">
-                  Screen Time Today:
-                </span>
-
-                <span className="font-bold text-slate-800">
-                  {selectedChild.screenTime}
-                </span>
-              </div>
-
-              <div className="flex justify-between py-1.5 text-sm">
-                <span className="text-slate-500">
-                  Daily Limit:
-                </span>
-
-                <span className="font-medium text-slate-700">
-                  {selectedChild.dailyLimit}
-                </span>
-              </div>
-
-              <div className="flex justify-between py-1.5 text-sm">
-                <span className="text-slate-500">
-                  Active Device:
-                </span>
-
-                <span className="font-semibold text-blue-600">
-                  {selectedChild.activeDevice}
-                </span>
-              </div>
-
-            </div>
           </div>
 
-          {/* =================================================
-              PROFILE INFORMATION
-          ================================================= */}
+        </aside>
 
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm lg:col-span-2">
 
-            <h2 className="text-xl font-bold text-slate-900">
-              Profile Information
-            </h2>
+        {/* ================================================= */}
+        {/* MAIN PROFILE */}
+        {/* ================================================= */}
 
-            <div className="mt-6 grid grid-cols-1 gap-5 md:grid-cols-2">
+        <main className="flex-1 p-7 max-w-[1250px]">
 
-              {/* Name */}
+          {/* Breadcrumb */}
+          <div className="text-xs text-slate-400 mb-4">
+            Dashboard &nbsp;/&nbsp; Profile
+          </div>
 
-              <ProfileField
-                label="Name"
-                value={selectedChild.name}
-              />
 
-              {/* Age */}
+          {/* TITLE */}
+          <div className="flex justify-between items-center mb-7">
 
-              <ProfileField
-                label="Age"
-                value={String(selectedChild.age)}
-              />
+            <div>
 
-              {/* Grade */}
+              <h2 className="text-[28px] font-bold">
+                Student Profile
+              </h2>
 
-              <ProfileField
-                label="Grade"
-                value={selectedChild.grade}
-              />
+              <p className="text-sm text-slate-400 mt-1">
+                AI-powered wellbeing and child safety profile.
+              </p>
+
+            </div>
+
+
+            <div className="flex gap-3">
+
+              <button className="px-4 py-2.5 bg-white border border-slate-200 rounded-lg text-sm">
+                ◔ Focus Mode
+              </button>
+
+              <button className="px-4 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-semibold">
+                ⚡ Run AI Scan
+              </button>
+
+            </div>
+
+          </div>
+
+
+          {/* ================================================= */}
+          {/* STUDENT HEADER CARD */}
+          {/* ================================================= */}
+
+          <section className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm mb-5">
+
+            <div className="flex items-center">
+
+              {/* Avatar */}
+              <div className="w-[76px] h-[76px] rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xl font-bold mr-5">
+                {selectedStudent.avatar}
+              </div>
+
+
+              {/* Student */}
+              <div className="flex-1">
+
+                <div className="flex items-center gap-3">
+
+                  <h3 className="text-xl font-bold">
+                    {selectedStudent.name}
+                  </h3>
+
+                  <span className="px-3 py-1 rounded-full bg-blue-100 text-blue-600 text-[10px] font-semibold">
+                    Student
+                  </span>
+
+                </div>
+
+                <p className="text-sm text-slate-400 mt-1">
+                  Age {selectedStudent.age} • Class{" "}
+                  {selectedStudent.className}
+                </p>
+
+                <p className="text-xs text-slate-400 mt-1">
+                  {selectedStudent.school}
+                </p>
+
+              </div>
+
 
               {/* Device */}
+              <div className="mr-10">
 
-              <ProfileField
-                label="Active Device"
-                value={selectedChild.activeDevice}
+                <p className="text-[10px] text-slate-400 uppercase">
+                  Connected Device
+                </p>
+
+                <p className="text-sm font-semibold mt-1">
+                  💻 {selectedStudent.device}
+                </p>
+
+              </div>
+
+
+              {/* Status */}
+              <div>
+
+                <p className="text-[10px] text-slate-400 uppercase">
+                  Status
+                </p>
+
+                <p className="text-sm font-semibold text-green-600 mt-1">
+                  ● {selectedStudent.status}
+                </p>
+
+              </div>
+
+            </div>
+
+          </section>
+
+
+          {/* ================================================= */}
+          {/* PROFILE INFORMATION */}
+          {/* ================================================= */}
+
+          <section className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm mb-5">
+
+            <div className="flex justify-between items-center mb-5">
+
+              <div>
+
+                <h3 className="text-lg font-bold">
+                  Profile Information
+                </h3>
+
+                <p className="text-xs text-slate-400 mt-1">
+                  Manage {selectedStudent.name}'s student information.
+                </p>
+
+              </div>
+
+
+              <button
+                onClick={() => setEditMode(!editMode)}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg text-xs font-semibold"
+              >
+                {editMode ? "Save Changes" : "Edit Profile"}
+              </button>
+
+            </div>
+
+
+            <div className="grid grid-cols-2 gap-4">
+
+              <InfoBox
+                label="FULL NAME"
+                value={selectedStudent.name}
+                edit={editMode}
               />
 
-              {/* Screen Limit */}
-
-              <ProfileField
-                label="Daily Screen Limit"
-                value={selectedChild.dailyLimit}
+              <InfoBox
+                label="AGE"
+                value={`${selectedStudent.age} Years`}
+                edit={editMode}
               />
 
-              {/* Wellbeing */}
+              <InfoBox
+                label="CLASS"
+                value={`Class ${selectedStudent.className}`}
+                edit={editMode}
+              />
 
-              <ProfileField
-                label="Wellbeing Score"
-                value={`${selectedChild.wellbeing}%`}
+              <InfoBox
+                label="SCHOOL"
+                value={selectedStudent.school}
+                edit={editMode}
+              />
+
+              <InfoBox
+                label="CONNECTED DEVICE"
+                value={selectedStudent.device}
+                edit={editMode}
+              />
+
+              <InfoBox
+                label="ACCOUNT STATUS"
+                value={selectedStudent.status}
+                edit={editMode}
               />
 
             </div>
-          </div>
-        </div>
 
-        {/* =================================================
-            CURRENT STATUS
-        ================================================= */}
+          </section>
 
-        <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
 
-          <h2 className="text-xl font-bold text-slate-900">
-            Current Status
-          </h2>
+          {/* ================================================= */}
+          {/* WELLBEING */}
+          {/* ================================================= */}
 
-          <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-4">
+          <section className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm mb-5">
 
-            {/* Screen Time */}
+            <h3 className="text-lg font-bold">
+              Wellbeing Overview
+            </h3>
 
-            <StatusCard
-              title="Screen Time"
-              value={selectedChild.screenTime}
-              className="bg-blue-50"
-            />
+            <p className="text-xs text-slate-400 mt-1 mb-5">
+              AI-generated wellbeing indicators for{" "}
+              {selectedStudent.name}.
+            </p>
 
-            {/* Wellbeing */}
 
-            <StatusCard
-              title="Wellbeing"
-              value={`${selectedChild.wellbeing}%`}
-              className="bg-emerald-50"
-              valueClass="text-emerald-600"
-            />
+            <div className="grid grid-cols-3 gap-4">
 
-            {/* Alerts */}
+              <StatCard
+                title="Wellbeing Score"
+                value={`${selectedStudent.wellbeing}/100`}
+                description="Healthy"
+              />
 
-            <StatusCard
-              title="Alerts"
-              value={String(selectedChild.alerts)}
-              className="bg-amber-50"
-            />
+              <StatCard
+                title="Today's Screen Time"
+                value={selectedStudent.screenTime}
+                description="Within limits"
+              />
 
-            {/* Apps */}
+              <StatCard
+                title="AI Protection"
+                value="Enabled"
+                description="Continuous monitoring"
+              />
 
-            <StatusCard
-              title="Apps Monitored"
-              value={String(
-                selectedChild.appsMonitored
-              )}
-              className="bg-purple-50"
-            />
+            </div>
 
-          </div>
-        </div>
+          </section>
 
-        {/* =================================================
-            CHILD SWITCHER
-        ================================================= */}
 
-        <div className="mt-6">
+          {/* ================================================= */}
+          {/* AI PROTECTION */}
+          {/* ================================================= */}
 
-          <h2 className="mb-4 text-xl font-bold text-slate-900">
-            Children
-          </h2>
+          <section className="bg-blue-50 border border-blue-100 rounded-2xl p-5">
 
-          <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
+            <div className="flex items-center gap-4">
 
-            {children.map((child) => {
-              const selected =
-                selectedChild.id === child.id;
+              <div className="w-12 h-12 rounded-xl bg-white flex items-center justify-center text-blue-600 text-xl">
+                🛡
+              </div>
 
-              return (
-                <button
-                  key={child.id}
-                  type="button"
-                  onClick={() =>
-                    selectChild(child)
-                  }
-                  className={`rounded-2xl border bg-white p-5 text-left shadow-sm transition ${
-                    selected
-                      ? "border-blue-400 ring-2 ring-blue-100"
-                      : "border-slate-200 hover:border-blue-200 hover:shadow-md"
-                  }`}
-                >
+              <div>
 
-                  <div className="flex items-center gap-4">
+                <h3 className="font-bold text-blue-800">
+                  AI Protection Active
+                </h3>
 
-                    <div className="flex h-14 w-14 items-center justify-center rounded-full bg-blue-50 text-2xl">
-                      {child.avatar}
-                    </div>
+                <p className="text-xs text-blue-600 mt-1">
+                  {selectedStudent.name} is protected by continuous
+                  AI safety monitoring, content filtering and
+                  wellbeing analysis.
+                </p>
 
-                    <div className="flex-1">
+              </div>
 
-                      <p className="font-bold text-slate-900">
-                        {child.name}
-                      </p>
+            </div>
 
-                      <p className="text-sm text-slate-500">
-                        {child.grade} • Age{" "}
-                        {child.age}
-                      </p>
+          </section>
 
-                    </div>
+        </main>
 
-                    {selected && (
-                      <Check
-                        size={20}
-                        className="text-blue-600"
-                      />
-                    )}
-
-                  </div>
-
-                  <div className="mt-4 rounded-xl bg-slate-50 p-3">
-
-                    <div className="flex justify-between text-sm">
-                      <span className="text-slate-500">
-                        Wellbeing
-                      </span>
-
-                      <span className="font-bold text-emerald-600">
-                        {child.wellbeing}/100
-                      </span>
-                    </div>
-
-                    <div className="mt-2 flex justify-between text-sm">
-                      <span className="text-slate-500">
-                        Screen Time
-                      </span>
-
-                      <span className="font-semibold text-slate-800">
-                        {child.screenTime}
-                      </span>
-                    </div>
-
-                    <div className="mt-2 flex justify-between text-sm">
-                      <span className="text-slate-500">
-                        Device
-                      </span>
-
-                      <span className="font-semibold text-blue-600">
-                        {child.activeDevice}
-                      </span>
-                    </div>
-
-                  </div>
-                </button>
-              );
-            })}
-
-          </div>
-        </div>
       </div>
-    </main>
-  );
-}
 
-/* =========================================================
-   PROFILE FIELD
-========================================================= */
-
-function ProfileField({
-  label,
-  value,
-}: {
-  label: string;
-  value: string;
-}) {
-  return (
-    <div>
-      <label className="mb-2 block text-sm font-medium text-slate-500">
-        {label}
-      </label>
-
-      <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700">
-        {value}
-      </div>
     </div>
   );
 }
 
-/* =========================================================
-   STATUS CARD
-========================================================= */
 
-function StatusCard({
+/* ================================================= */
+/* SIDEBAR ITEM */
+/* ================================================= */
+
+function SidebarItem({
+  icon,
+  text,
+  badge,
+}: {
+  icon: string;
+  text: string;
+  badge?: string;
+}) {
+  return (
+    <button className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-slate-600 hover:bg-blue-50 hover:text-blue-600">
+
+      <span className="w-5 text-center">
+        {icon}
+      </span>
+
+      <span className="flex-1 text-left">
+        {text}
+      </span>
+
+      {badge && (
+        <span className="w-5 h-5 rounded-full bg-yellow-100 text-yellow-700 text-[10px] flex items-center justify-center">
+          {badge}
+        </span>
+      )}
+
+    </button>
+  );
+}
+
+
+/* ================================================= */
+/* INFORMATION BOX */
+/* ================================================= */
+
+function InfoBox({
+  label,
+  value,
+  edit,
+}: {
+  label: string;
+  value: string;
+  edit: boolean;
+}) {
+  return (
+    <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
+
+      <p className="text-[9px] font-semibold text-slate-400 mb-2">
+        {label}
+      </p>
+
+      {edit ? (
+        <input
+          defaultValue={value}
+          className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-500"
+        />
+      ) : (
+        <p className="text-sm font-medium text-slate-700">
+          {value}
+        </p>
+      )}
+
+    </div>
+  );
+}
+
+
+/* ================================================= */
+/* STAT CARD */
+/* ================================================= */
+
+function StatCard({
   title,
   value,
-  className,
-  valueClass = "text-slate-900",
+  description,
 }: {
   title: string;
   value: string;
-  className: string;
-  valueClass?: string;
+  description: string;
 }) {
   return (
-    <div className={`rounded-xl p-5 ${className}`}>
-      <p className="text-sm text-slate-500">
+    <div className="border border-slate-200 rounded-xl p-5">
+
+      <p className="text-xs text-slate-400">
         {title}
       </p>
 
-      <p
-        className={`mt-2 text-2xl font-bold ${valueClass}`}
-      >
+      <p className="text-2xl font-bold mt-2">
         {value}
       </p>
+
+      <p className="text-[11px] text-green-600 mt-2">
+        ✓ {description}
+      </p>
+
     </div>
   );
 }
