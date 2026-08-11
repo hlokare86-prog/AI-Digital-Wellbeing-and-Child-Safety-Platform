@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 
-
 import WellbeingAnalytics from "./components/WellbeingAnalytics";
 import ChildrenDevices from "./components/ChildrenDevices";
 import AIContentFilters from "./components/AIContentFilters";
@@ -835,423 +834,36 @@ function ReportsPage({
   );
 }
 function DashboardOverview() {
-  const [selectedStudent, setSelectedStudent] = useState<Student>(
-    students[0]
-  );
+  const [selectedStudent, setSelectedStudent] = useState<Student>(students[0]);
 
-  const [menuOpen, setMenuOpen] = useState(false);
-
-  const [scanRunning, setScanRunning] = useState(false);
-
-  /* ========================================================= */
-  /* LOAD SELECTED STUDENT */
-  /* ========================================================= */
-
+  /* Keep the dashboard synchronized with the student selected in the main top bar. */
   useEffect(() => {
-    const savedId = localStorage.getItem(STORAGE_KEY);
+    const loadSelectedStudent = () => {
+      const savedId = localStorage.getItem(STORAGE_KEY);
+      if (!savedId) return;
 
-    if (savedId) {
-      const student = students.find(
-        (item) => item.id === Number(savedId)
-      );
-
-      if (student) {
-        setSelectedStudent(student);
-      }
-    }
-
-    const handleStudentChange = () => {
-      const id = localStorage.getItem(STORAGE_KEY);
-
-      if (!id) return;
-
-      const student = students.find(
-        (item) => item.id === Number(id)
-      );
-
-      if (student) {
-        setSelectedStudent(student);
-      }
+      const student = students.find((item) => item.id === Number(savedId));
+      if (student) setSelectedStudent(student);
     };
 
-    window.addEventListener(
-      STUDENT_EVENT,
-      handleStudentChange
-    );
-
-    window.addEventListener(
-      "storage",
-      handleStudentChange
-    );
+    loadSelectedStudent();
+    window.addEventListener(STUDENT_EVENT, loadSelectedStudent);
+    window.addEventListener("storage", loadSelectedStudent);
 
     return () => {
-      window.removeEventListener(
-        STUDENT_EVENT,
-        handleStudentChange
-      );
-
-      window.removeEventListener(
-        "storage",
-        handleStudentChange
-      );
+      window.removeEventListener(STUDENT_EVENT, loadSelectedStudent);
+      window.removeEventListener("storage", loadSelectedStudent);
     };
   }, []);
 
-  /* ========================================================= */
-  /* CHANGE STUDENT */
-  /* ========================================================= */
-
-  const changeStudent = (student: Student) => {
-    setSelectedStudent(student);
-    setMenuOpen(false);
-
-    localStorage.setItem(
-      STORAGE_KEY,
-      student.id.toString()
-    );
-
-    window.dispatchEvent(
-      new Event(STUDENT_EVENT)
-    );
-  };
-
-  /* ========================================================= */
-  /* RUN AI SCAN */
-  /* ========================================================= */
-
-  const runAIScan = () => {
-    setScanRunning(true);
-
-    setTimeout(() => {
-      setScanRunning(false);
-    }, 2000);
-  };
-
   return (
-    <div className="min-h-screen bg-[#f7f9fc] text-slate-900">
+    <div className="space-y-5">
 
-      {/* ===================================================== */}
-      {/* HEADER */}
-      {/* ===================================================== */}
-
-      <header className="h-[74px] bg-white border-b border-slate-200 flex items-center px-7">
-
-        {/* LOGO */}
-
-        <div className="flex items-center gap-3 w-[235px]">
-
-          <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white">
-            🛡
-          </div>
-
-          <div>
-
-            <h1 className="font-bold text-[17px]">
-              AI Wellbeing
-            </h1>
-
-            <p className="text-[10px] text-slate-400">
-              Child Safety & Mental Health Engine
-            </p>
-
-          </div>
-
-        </div>
-
-
-        {/* ================================================= */}
-        {/* STUDENT SELECTOR */}
-        {/* ================================================= */}
-
-        <div className="relative">
-
-          <button
-            onClick={() => setMenuOpen(!menuOpen)}
-            className="w-[285px] h-[56px] bg-white border border-slate-200 rounded-xl flex items-center px-4 gap-3 hover:bg-slate-50"
-          >
-
-            <div className="w-9 h-9 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold">
-              {selectedStudent.avatar}
-            </div>
-
-            <div className="text-left flex-1">
-
-              <p className="text-sm font-semibold">
-                {selectedStudent.name}
-              </p>
-
-              <p className="text-[11px] text-slate-400">
-                Age {selectedStudent.age} •{" "}
-                {selectedStudent.device}
-              </p>
-
-            </div>
-
-            <span className="text-slate-400">
-              {menuOpen ? "⌃" : "⌄"}
-            </span>
-
-          </button>
-
-
-          {/* ================================================= */}
-          {/* DROPDOWN */}
-          {/* ================================================= */}
-
-          {menuOpen && (
-
-            <div className="absolute top-[62px] left-0 w-[330px] bg-white border border-slate-200 rounded-2xl shadow-xl z-50 overflow-hidden">
-
-              <div className="px-5 py-4 border-b border-slate-100">
-
-                <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">
-                  Select Child
-                </p>
-
-              </div>
-
-
-              {/* ALL CHILDREN */}
-
-              <button
-                onClick={() => setMenuOpen(false)}
-                className="w-full flex items-center gap-4 px-5 py-4 hover:bg-slate-50 text-left"
-              >
-
-                <div className="w-11 h-11 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-[10px] font-bold">
-                  ALL
-                </div>
-
-                <div>
-
-                  <p className="font-semibold">
-                    All Children
-                  </p>
-
-                  <p className="text-xs text-slate-400">
-                    View family overview
-                  </p>
-
-                </div>
-
-              </button>
-
-
-              {/* STUDENTS */}
-
-              {students.map((student) => (
-
-                <button
-                  key={student.id}
-                  onClick={() => changeStudent(student)}
-                  className={`w-full flex items-center gap-4 px-5 py-4 text-left transition
-                    ${
-                      selectedStudent.id === student.id
-                        ? "bg-blue-50"
-                        : "hover:bg-slate-50"
-                    }
-                  `}
-                >
-
-                  <div className="w-11 h-11 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-sm font-bold">
-                    {student.avatar}
-                  </div>
-
-                  <div className="flex-1">
-
-                    <p className="font-semibold text-sm">
-                      {student.name}
-                    </p>
-
-                    <p className="text-xs text-slate-400">
-                      Age {student.age} • {student.device}
-                    </p>
-
-                  </div>
-
-                  {selectedStudent.id === student.id && (
-                    <span className="text-blue-600">
-                      ✓
-                    </span>
-                  )}
-
-                </button>
-
-              ))}
-
-            </div>
-
-          )}
-
-        </div>
-
-
-        {/* ================================================= */}
-        {/* SEARCH */}
-        {/* ================================================= */}
-
-        <div className="ml-5 flex-1 max-w-[360px]">
-
-          <div className="h-[46px] border border-slate-200 rounded-xl flex items-center px-4 gap-3 bg-white">
-
-            <span className="text-slate-400">
-              🔍
-            </span>
-
-            <input
-              placeholder="Search apps, domains, alerts..."
-              className="outline-none w-full text-sm"
-            />
-
-          </div>
-
-        </div>
-
-
-        {/* ================================================= */}
-        {/* PARENT */}
-        {/* ================================================= */}
-
-        <div className="ml-auto flex items-center gap-4">
-
-          <button className="text-slate-500">
-            🔔
-          </button>
-
-          <div className="w-9 h-9 rounded-full bg-slate-900 text-white flex items-center justify-center text-xs">
-            {parent.avatar}
-          </div>
-
-          <div>
-
-            <p className="text-sm font-semibold">
-              {parent.name}
-            </p>
-
-            <p className="text-[10px] text-green-600">
-              {parent.role}
-            </p>
-
-          </div>
-
-        </div>
-
-      </header>
-
-
-      {/* ===================================================== */}
-      {/* BODY */}
-      {/* ===================================================== */}
-
-      <div className="flex">
-
-        {/* ================================================= */}
-        {/* SIDEBAR */}
-        {/* ================================================= */}
-
-        <aside className="w-[235px] min-h-[calc(100vh-74px)] bg-white border-r border-slate-200 p-5">
-
-          <p className="text-[10px] font-bold text-slate-400 uppercase mb-4">
-            Main Menu
-          </p>
-
-          <nav className="space-y-1">
-
-            <DashboardSidebarItem
-              icon="▦"
-              label="Dashboard Overview"
-              active
-            />
-
-            <DashboardSidebarItem
-              icon="⌁"
-              label="Wellbeing Analytics"
-            />
-
-            <DashboardSidebarItem
-              icon="♙"
-              label="Children & Devices"
-            />
-
-            <DashboardSidebarItem
-              icon="✓"
-              label="AI Content Filters"
-            />
-
-            <DashboardSidebarItem
-              icon="◉"
-              label="AI Risk Detection"
-            />
-
-            <DashboardSidebarItem
-              icon="⚠"
-              label="Live Risk Alerts"
-              badge="3"
-            />
-
-            <DashboardSidebarItem
-              icon="⚙"
-              label="Guardian Settings"
-            />
-
-          </nav>
-
-
-          {/* PROTECTION */}
-
-          <div className="mt-[220px] bg-blue-50 rounded-xl p-4">
-
-            <p className="text-xs font-bold text-blue-700">
-              ⚡ AI Protection Active
-            </p>
-
-            <p className="text-[10px] text-blue-500 mt-2 leading-4">
-              {selectedStudent.name} is protected by continuous
-              AI safety monitoring.
-            </p>
-
-          </div>
-
-
-          {/* PARENT */}
-
-          <div className="mt-5 pt-4 border-t border-slate-200">
-
-            <div className="flex items-center gap-3">
-
-              <div className="w-9 h-9 rounded-full bg-slate-900 text-white flex items-center justify-center text-xs">
-                {parent.avatar}
-              </div>
-
-              <div>
-
-                <p className="text-sm font-semibold">
-                  {parent.name}
-                </p>
-
-                <p className="text-[10px] text-slate-400">
-                  {parent.accountType}
-                </p>
-
-              </div>
-
-            </div>
-
-          </div>
-
-        </aside>
-
-
-        {/* ================================================= */}
-        {/* DASHBOARD */}
-        {/* ================================================= */}
-
-        <main className="flex-1 p-7 overflow-hidden">
 
 
           {/* TITLE */}
 
-          <div className="flex justify-between items-center mb-6">
+          <div className="mb-6">
 
             <div>
 
@@ -1269,8 +881,6 @@ function DashboardOverview() {
               </p>
 
             </div>
-
-
 
           </div>
 
@@ -1532,15 +1142,10 @@ function DashboardOverview() {
 
           </section>
 
-        </main>
-
-      </div>
-
+        
     </div>
   );
 }
-
-
 
 
 /* ========================================================= */
@@ -1675,7 +1280,7 @@ export default function Home() {
 
   const [adminMenuOpen, setAdminMenuOpen] = useState(false);
 
-    const [focusMode, setFocusMode] = useState(false);
+  const [focusMode, setFocusMode] = useState(false);
 
   const [selectedStudent, setSelectedStudent] =
     useState<Student | null>(null);
@@ -1956,7 +1561,8 @@ export default function Home() {
         />
       );
 
-    default:          return <DashboardOverview />;
+    default:
+      return <DashboardOverview />;
   }
 };
 
