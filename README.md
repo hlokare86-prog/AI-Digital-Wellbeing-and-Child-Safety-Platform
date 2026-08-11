@@ -303,7 +303,7 @@ Parents can access:
 
 **---**
 
-**## 🧩 Core Modules**
+## 🧩 Core Modules
 
 The major modules of MindShield AI are:
 
