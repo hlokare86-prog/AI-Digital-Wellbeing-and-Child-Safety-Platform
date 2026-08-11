@@ -952,6 +952,26 @@ export default function Home() {
   }, []);
 
   /* =========================================================
+     SEARCH
+     IMPORTANT: Keep this hook before any conditional return.
+     React hooks must run in the same order on every render.
+  ========================================================= */
+
+  const filteredSearchItems = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+
+    if (!query) {
+      return [];
+    }
+
+    return searchItems.filter(
+      (item) =>
+        item.name.toLowerCase().includes(query) ||
+        item.description.toLowerCase().includes(query)
+    );
+  }, [searchQuery]);
+
+  /* =========================================================
      SAFETY CHECK
   ========================================================= */
 
@@ -978,25 +998,6 @@ export default function Home() {
   ========================================================= */
 
   const selectedChild = studentToChild(selectedStudent);
-
-  /* =========================================================
-     SEARCH
-  ========================================================= */
-
-  const filteredSearchItems = useMemo(() => {
-    const query =
-      searchQuery.trim().toLowerCase();
-
-    if (!query) {
-      return [];
-    }
-
-    return searchItems.filter(
-      (item) =>
-        item.name.toLowerCase().includes(query) ||
-        item.description.toLowerCase().includes(query)
-    );
-  }, [searchQuery]);
 
   /* =========================================================
      OPEN PAGE
