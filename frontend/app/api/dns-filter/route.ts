@@ -1,51 +1,103 @@
 import { NextRequest, NextResponse } from "next/server";
-import fs from "fs";
-import path from "path";
+import fs from "node:fs/promises";
+import path from "node:path";
 
-type DNSRecord = {
-  domain: string;
-  action: "ALLOW" | "BLOCK" | "REVIEW";
-  label: string;
-  content_category: string;
-  threat_score: number;
-  known_blocklist_match: number;
-};
+export const dynamic = "force-dynamic";
 
-let recordsCache: DNSRecord[] | null = null;
-
-function normalizeDomain(value: string): string {
-  let domain = value.trim().toLowerCase();
-
-  // Remove protocol
-  domain = domain.replace(/^https?:\/\//, "");
-
-  // Remove www.
-  domain = domain.replace(/^www\./, "");
-
-  // Remove path
-  domain = domain.split("/")[0];
-
-  // Remove query
-  domain = domain.split("?")[0];
-
-  // Remove hash
-  domain = domain.split("#")[0];
-
-  // Remove port
-  domain = domain.split(":")[0];
-
-  // Remove trailing dot
-  domain = domain.replace(/\.$/, "");
-
-  // Handle escaped dots from some CSV values
-  domain = domain.replace(/\\\./g, ".");
-
-  return domain;
+function normalizeDomain(value: string) {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/^https?:\/\//, "")
+    .replace(/^www\./, "")
+    .split("/")[0]
+    .split("?")[0]
+    .split("#")[0]
+    .replace(/\.$/, "");
 }
 
-function loadDataset(): DNSRecord[] {
-  if (recordsCache) {
-    return recordsCache;
+function parseCsvLine(line: string): string[] {
+  const result: string[] = [];
+  let current = "";
+  let quoted = false;
+
+  for (let i = 0; i < line.length; i++) {
+    const char = line[i];
+
+    if (char === '"') {
+      if (quoted && line[i + 1] === '"') {
+        current += '"';
+        i++;
+      } else {
+        quoted = !quoted;
+      }
+    } else if (char === "," && !quoted) {
+      result.push(current.trim());
+      current = "";
+    } else {
+      current += char;
+    }
+  }
+
+  result.push(current.trim());
+  return result;
+}
+
+function findColumn(headers: string[], names: string[]) {
+  const normalized = headers.map((h) =>
+    h.toLowerCase().replace(/[^a-z0-9]/g, "")
+  );
+
+  for (const name of names) {
+    const index = normalized.indexOf(
+      name.toLowerCase().replace(/[^a-z0-9]/g, "")
+    );
+
+    if (index !== -1) return index;
+  }
+
+  return -1;
+}
+
+function actionToStatus(action: string) {
+  const value = action.trim().toUpperCase();
+
+  if (value === "ALLOW" || value === "ALLOWED") {
+    return "allowed" as const;
+  }
+
+  if (
+    value === "BLOCK" ||
+    value === "BLOCKED" ||
+    value === "DENY"
+  ) {
+    return "blocked" as const;
+  }
+
+  if (value === "REVIEW" || value === "WARN") {
+    return "review" as const;
+  }
+
+  return "unknown" as const;
+}
+
+export async function GET(request: NextRequest) {
+  const rawDomain =
+    request.nextUrl.searchParams.get("domain") ?? "";
+
+  const domain = normalizeDomain(rawDomain);
+
+  if (!domain) {
+    return NextResponse.json(
+      {
+        found: false,
+        domain: "",
+        status: "unknown",
+        action: "NOT_FOUND",
+        message: "Please enter a domain name.",
+      },
+      { status: 400 }
+    );
   }
 
   const csvPath = path.join(
@@ -54,228 +106,167 @@ function loadDataset(): DNSRecord[] {
     "dns_filtering_dataset_60000_rows.csv"
   );
 
-  if (!fs.existsSync(csvPath)) {
-    throw new Error(`Dataset not found: ${csvPath}`);
-  }
-
-  const csv = fs.readFileSync(csvPath, "utf8");
-
-  const lines = csv
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter(Boolean);
-
-  if (lines.length < 2) {
-    throw new Error("Dataset is empty.");
-  }
-
-  // Find column positions from header
-  const headers = lines[0]
-    .split(",")
-    .map((header) => header.trim().replace(/^"|"$/g, "").toLowerCase());
-
-  const domainIndex = headers.indexOf("domain");
-  const actionIndex = headers.indexOf("action");
-  const labelIndex = headers.indexOf("label");
-  const categoryIndex = headers.indexOf("content_category");
-  const threatIndex = headers.indexOf("threat_score");
-  const blocklistIndex = headers.indexOf("known_blocklist_match");
-
-  if (
-    domainIndex === -1 ||
-    actionIndex === -1 ||
-    labelIndex === -1
-  ) {
-    throw new Error(
-      "Dataset must contain domain, action and label columns."
-    );
-  }
-
-  const records: DNSRecord[] = [];
-
-  for (let i = 1; i < lines.length; i++) {
-    const columns = lines[i]
-      .split(",")
-      .map((value) => value.trim().replace(/^"|"$/g, ""));
-
-    const rawDomain = columns[domainIndex];
-
-    if (!rawDomain) {
-      continue;
-    }
-
-    const domain = normalizeDomain(rawDomain);
-
-    const rawAction = (columns[actionIndex] || "")
-      .trim()
-      .toUpperCase();
-
-    let action: "ALLOW" | "BLOCK" | "REVIEW";
-
-    if (rawAction === "BLOCK") {
-      action = "BLOCK";
-    } else if (rawAction === "REVIEW") {
-      action = "REVIEW";
-    } else {
-      action = "ALLOW";
-    }
-
-    records.push({
-      domain,
-      action,
-      label: columns[labelIndex] || "",
-      content_category:
-        categoryIndex >= 0 ? columns[categoryIndex] || "" : "",
-      threat_score:
-        threatIndex >= 0
-          ? Number(columns[threatIndex] || 0)
-          : 0,
-      known_blocklist_match:
-        blocklistIndex >= 0
-          ? Number(columns[blocklistIndex] || 0)
-          : 0,
-    });
-  }
-
-  recordsCache = records;
-
-  console.log(
-    `DNS dataset loaded: ${records.length} records`
-  );
-
-  return records;
-}
-
-export async function GET(request: NextRequest) {
   try {
-    const rawDomain =
-      request.nextUrl.searchParams.get("domain");
+    const csv = await fs.readFile(csvPath, "utf8");
 
-    if (!rawDomain) {
+    const lines = csv
+      .split(/\r?\n/)
+      .filter((line) => line.trim().length > 0);
+
+    if (lines.length < 2) {
       return NextResponse.json(
         {
           found: false,
-          error: "Please enter a domain.",
+          domain,
+          status: "unknown",
+          action: "NOT_FOUND",
+          message: "The DNS filtering dataset is empty.",
         },
-        { status: 400 }
+        { status: 500 }
       );
     }
 
-    const domain = normalizeDomain(rawDomain);
+    const headers = parseCsvLine(lines[0]);
 
-    if (!domain) {
+    const domainIndex = findColumn(headers, [
+      "domain",
+      "domains",
+      "website",
+      "url",
+      "hostname",
+      "host",
+      "domainname",
+    ]);
+
+    const actionIndex = findColumn(headers, [
+      "action",
+      "status",
+      "decision",
+      "policy",
+      "access",
+    ]);
+
+    const categoryIndex = findColumn(headers, [
+      "content_category",
+      "category",
+      "contentcategory",
+      "type",
+    ]);
+
+    const threatIndex = findColumn(headers, [
+      "threat_score",
+      "threatscore",
+      "risk_score",
+      "riskscore",
+      "score",
+    ]);
+
+    if (domainIndex === -1) {
       return NextResponse.json(
         {
           found: false,
-          error: "Invalid domain.",
+          domain,
+          status: "unknown",
+          action: "NOT_FOUND",
+          message:
+            "The dataset does not contain a recognizable domain column.",
         },
-        { status: 400 }
+        { status: 500 }
       );
     }
 
-    const records = loadDataset();
+    for (let i = 1; i < lines.length; i++) {
+      const values = parseCsvLine(lines[i]);
 
-    // Find ALL records for this domain
-    const matches = records.filter(
-      (record) => record.domain === domain
-    );
+      const rowDomain = normalizeDomain(
+        values[domainIndex] ?? ""
+      );
 
-    // Domain does not exist
-    if (matches.length === 0) {
-      return NextResponse.json({
-        found: false,
-        domain,
-        status: "unknown",
-        action: "NOT_FOUND",
-        message:
-          `${domain} was not found in the DNS filtering dataset.`,
-      });
-    }
+      if (!rowDomain) continue;
 
-    /*
-      Some domains occur multiple times.
+      if (
+        rowDomain === domain ||
+        rowDomain.endsWith(`.${domain}`)
+      ) {
+        const rawAction =
+          actionIndex >= 0
+            ? values[actionIndex] ?? ""
+            : "";
 
-      Security priority:
-      BLOCK > REVIEW > ALLOW
+        const status = actionToStatus(rawAction);
 
-      So if any record for a domain says BLOCK,
-      we treat that domain as BLOCKED.
-    */
+        let action:
+          | "ALLOW"
+          | "BLOCK"
+          | "REVIEW"
+          | "NOT_FOUND" = "REVIEW";
 
-    const hasBlock = matches.some(
-      (record) => record.action === "BLOCK"
-    );
+        if (status === "allowed") {
+          action = "ALLOW";
+        } else if (status === "blocked") {
+          action = "BLOCK";
+        } else if (status === "review") {
+          action = "REVIEW";
+        }
 
-    const hasReview = matches.some(
-      (record) => record.action === "REVIEW"
-    );
+        const threatValue =
+          threatIndex >= 0
+            ? values[threatIndex] ?? ""
+            : "";
 
-    let action: "ALLOW" | "BLOCK" | "REVIEW";
+        const threatScore = Number(threatValue);
 
-    if (hasBlock) {
-      action = "BLOCK";
-    } else if (hasReview) {
-      action = "REVIEW";
-    } else {
-      action = "ALLOW";
-    }
+        return NextResponse.json({
+          found: true,
+          domain,
+          status,
+          action,
+          label:
+            rawAction || status.toUpperCase(),
 
-    const selectedRecord =
-      matches.find((record) => record.action === action) ||
-      matches[0];
+          content_category:
+            categoryIndex >= 0
+              ? values[categoryIndex] || "Unknown"
+              : "Unknown",
 
-    let status:
-      | "allowed"
-      | "blocked"
-      | "review";
+          threat_score:
+            Number.isFinite(threatScore)
+              ? threatScore
+              : undefined,
 
-    if (action === "BLOCK") {
-      status = "blocked";
-    } else if (action === "REVIEW") {
-      status = "review";
-    } else {
-      status = "allowed";
+          total_records: lines.length - 1,
+
+          message:
+            status === "allowed"
+              ? `${domain} is allowed by the DNS filtering policy.`
+              : status === "blocked"
+                ? `${domain} is blocked by the DNS filtering policy.`
+                : `${domain} requires review according to the DNS filtering policy.`,
+        });
+      }
     }
 
     return NextResponse.json({
-      found: true,
-
+      found: false,
       domain,
-
-      status,
-
-      action,
-
-      label: selectedRecord.label,
-
-      content_category:
-        selectedRecord.content_category,
-
-      threat_score:
-        selectedRecord.threat_score,
-
-      known_blocklist_match:
-        selectedRecord.known_blocklist_match,
-
-      total_records: matches.length,
-
+      status: "unknown",
+      action: "NOT_FOUND",
+      total_records: lines.length - 1,
       message:
-        action === "BLOCK"
-          ? `${domain} is blocked by the DNS filtering policy.`
-          : action === "REVIEW"
-            ? `${domain} requires review according to the DNS filtering policy.`
-            : `${domain} is allowed by the DNS filtering policy.`,
+        `${domain} was not found in the DNS filtering dataset.`,
     });
+
   } catch (error) {
     console.error("DNS FILTER ERROR:", error);
 
     return NextResponse.json(
       {
         found: false,
-        error:
-          error instanceof Error
-            ? error.message
-            : "Unable to read DNS filtering dataset.",
+        domain,
+        status: "unknown",
+        action: "NOT_FOUND",
+        message:
+          "DNS filtering dataset not found. Put dns_filtering_dataset_60000_rows.csv inside frontend/public.",
       },
       { status: 500 }
     );
