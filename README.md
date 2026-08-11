@@ -307,6 +307,7 @@ Parents can access:
 
 The major modules of MindShield AI are:
 
+```markdown
 ```text
 MindShield AI
 │
@@ -325,7 +326,8 @@ MindShield AI
 
 ---
 
-# 🏗️ System Architecture
+
+## 🏗️ System Architecture
 
 MindShield AI follows a modular, layered architecture that separates the
 frontend, backend, database, security, and AI/ML components.
