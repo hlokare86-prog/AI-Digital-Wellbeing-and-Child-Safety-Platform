@@ -1825,39 +1825,48 @@ export default function Home() {
                   )}
 
                   {domainResult.status === "allowed" && (
-                    <div>
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-11 w-11 items-center justify-center rounded-full bg-green-100 text-xl">
-                          ✅
-                        </div>
+  <div>
+    <div className="flex items-center gap-3">
+      <div className="flex h-11 w-11 items-center justify-center rounded-full bg-green-100 text-xl">
+        ✅
+      </div>
 
-                        <div>
-                          <p className="font-bold text-green-600">
-                            DOMAIN ALLOWED
-                          </p>
+      <div>
+        <p className="font-bold text-green-600">
+          DOMAIN ALLOWED
+        </p>
 
-                          <p className="text-sm font-semibold text-slate-800">
-                            {domainResult.domain}
-                          </p>
-                        </div>
-                      </div>
+        <p className="text-sm font-semibold text-slate-800">
+          {domainResult.domain}
+        </p>
+      </div>
+    </div>
 
-                      <p className="mt-3 text-xs text-slate-500">
-                        {domainResult.message}
-                      </p>
+    <p className="mt-3 text-xs text-slate-500">
+      {domainResult.message}
+    </p>
 
-                      <div className="mt-4 rounded-xl bg-green-50 p-3">
-                        <p className="text-xs font-semibold text-green-700">
-                          Safe Domain
-                        </p>
+    <div className="mt-4 rounded-xl bg-green-50 p-3">
+      <p className="text-xs font-semibold text-green-700">
+        Safe Domain
+      </p>
 
-                        <p className="mt-1 text-xs text-green-600">
-                          This domain is allowed by the
-                          DNS filtering policy.
-                        </p>
-                      </div>
-                    </div>
-                  )}
+      <p className="mt-1 text-xs text-green-600">
+        This domain is allowed by the DNS filtering policy.
+      </p>
+    </div>
+
+    {/* OPEN ALLOWED DOMAIN */}
+    <a
+      href={`https://${domainResult.domain}`}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-green-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-green-700"
+    >
+      🌐 Open Domain
+    </a>
+  </div>
+)}
 
                   {domainResult.status === "review" && (
                     <div>
