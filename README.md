@@ -1286,7 +1286,7 @@ MindShield AI was developed collaboratively by a team of five members.
 
 | Team Member | Role | Responsibility |
 |---|---|---|
-| **Sejal** | Team Leader / Project Coordinator | Overall project coordination, conducting meetings, assigning tasks, reviewing team members' work, identifying mistakes, and coordinating project integration |
+| **Sejal** | Team Leader / Project Coordinator | Overall project coordination, reviewing team members' work, identifying mistakes, and coordinating project integration |
 | **Harsh** | Backend Developer | Backend development, APIs, database integration, and server-side functionality |
 | **Aarya** | Frontend Developer | Frontend development, user interface, components, and application integration |
 | **Aryan** | Machine Learning Developer | Machine learning models, DNS classification, data processing, and ML integration |
@@ -1296,11 +1296,8 @@ MindShield AI was developed collaboratively by a team of five members.
 
 Sejal coordinated the overall development of the project by:
 
-- Conducting and coordinating team meetings
-- Dividing and assigning tasks among team members
 - Monitoring the progress of each member
 - Reviewing submitted work
-- Identifying and communicating mistakes
 - Coordinating integration of different modules
 - Helping resolve development and integration issues
 - Maintaining overall project coordination
