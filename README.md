@@ -1309,7 +1309,6 @@ The project is intended to demonstrate the use of Artificial Intelligence,
 Machine Learning, web development, backend APIs, database management, and
 digital safety technologies.
 
-See the `LICENSE` file for the applicable license information.
 
 ---
 
