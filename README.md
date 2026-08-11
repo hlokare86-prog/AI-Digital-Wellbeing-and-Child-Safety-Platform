@@ -1292,15 +1292,7 @@ MindShield AI was developed collaboratively by a team of five members.
 | **Aryan** | Machine Learning Developer | Machine learning models, DNS classification, data processing, and ML integration |
 | **Khushboo** | Tester | Application testing, API testing, identifying bugs, and validating functionality |
 
-### 👩‍💻 Team Leader — Sejal
 
-Sejal coordinated the overall development of the project by:
-
-- Monitoring the progress of each member
-- Reviewing submitted work
-- Coordinating integration of different modules
-- Helping resolve development and integration issues
-- Maintaining overall project coordination
 
 Each team member worked on their assigned feature branch and contributed
 to the final integrated project.
