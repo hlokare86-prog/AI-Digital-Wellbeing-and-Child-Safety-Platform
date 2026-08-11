@@ -301,13 +301,12 @@ Parents can access:
 - Reports
 - AI insights
 
----
+**---**
 
-## 🧩 Core Modules
+**## 🧩 Core Modules**
 
 The major modules of MindShield AI are:
 
-```markdown
 ```text
 MindShield AI
 │
@@ -324,8 +323,8 @@ MindShield AI
 ├── Safe Search
 └── Reports
 
+```
 ---
-
 
 ## 🏗️ System Architecture
 
@@ -333,60 +332,61 @@ MindShield AI follows a modular, layered architecture that separates the
 frontend, backend, database, security, and AI/ML components.
 
 ```text
-                         ┌──────────────────────┐
-                         │        Parent        │
-                         │       / User         │
-                         └──────────┬───────────┘
-                                    │
-                                    ▼
-                    ┌────────────────────────────┐
-                    │          Frontend          │
-                    │                            │
-                    │ Next.js + React             │
-                    │ TypeScript                  │
-                    │ Tailwind CSS                │
-                    │ Lucide Icons                │
-                    └─────────────┬──────────────┘
-                                  │
-                             REST APIs
-                                  │
-                                  ▼
-                    ┌────────────────────────────┐
-                    │       FastAPI Backend      │
-                    │                            │
-                    │ Routers                    │
-                    │ Services                   │
-                    │ Schemas                    │
-                    │ Models                     │
-                    │ Security                   │
-                    └─────────────┬──────────────┘
-                                  │
-                 ┌────────────────┼────────────────┐
-                 │                │                │
-                 ▼                ▼                ▼
-        ┌──────────────┐  ┌──────────────┐  ┌──────────────┐
-        │  PostgreSQL  │  │  AI / ML     │  │   OpenAI API │
-        │   Database   │  │  Components  │  │              │
-        └──────────────┘  └──────────────┘  └──────────────┘
-                 │                │                │
-                 │                ▼                │
-                 │       ┌─────────────────┐       │
-                 │       │  DNS Filtering  │       │
-                 │       │  Classification │       │
-                 │       └─────────────────┘       │
-                 │                                 │
-                 └──────────────┬──────────────────┘
-                                ▼
-                       ┌──────────────────┐
-                       │ Safety Analysis  │
-                       │ & Risk Assessment│
-                       └────────┬─────────┘
-                                ▼
-                       ┌──────────────────┐
-                       │ Parent Dashboard│
-                       │ Alerts & Reports│
-                       └──────────────────┘
+                         ┌──────────────────────┐
+                         │        Parent        │
+                         │       / User         │
+                         └──────────┬───────────┘
+                                    │
+                                    ▼
+                    ┌────────────────────────────┐
+                    │          Frontend          │
+                    │                            │
+                    │ Next.js + React             │
+                    │ TypeScript                  │
+                    │ Tailwind CSS                │
+                    │ Lucide Icons                │
+                    └─────────────┬──────────────┘
+                                  │
+                             REST APIs
+                                  │
+                                  ▼
+                    ┌────────────────────────────┐
+                    │       FastAPI Backend      │
+                    │                            │
+                    │ Routers                    │
+                    │ Services                   │
+                    │ Schemas                    │
+                    │ Models                     │
+                    │ Security                   │
+                    └─────────────┬──────────────┘
+                                  │
+                 ┌────────────────┼────────────────┐
+                 │                │                │
+                 ▼                ▼                ▼
+        ┌──────────────┐  ┌──────────────┐  ┌──────────────┐
+        │  PostgreSQL  │  │  AI / ML     │  │   OpenAI API │
+        │   Database   │  │  Components  │  │              │
+        └──────────────┘  └──────────────┘  └──────────────┘
+                 │                │                │
+                 │                ▼                │
+                 │       ┌─────────────────┐       │
+                 │       │  DNS Filtering  │       │
+                 │       │  Classification │       │
+                 │       └─────────────────┘       │
+                 │                                 │
+                 └──────────────┬──────────────────┘
+                                ▼
+                       ┌──────────────────┐
+                       │ Safety Analysis  │
+                       │ & Risk Assessment│
+                       └────────┬─────────┘
+                                ▼
+                       ┌──────────────────┐
+                       │ Parent Dashboard│
+                       │ Alerts & Reports│
+                       └──────────────────┘
 
+```
 ---
 
 # 💻 Technology Stack
@@ -487,28 +487,29 @@ PostgreSQL stores data related to:
 The major technologies work together as follows:
 
 ```text
-                    ┌───────────────────┐
-                    │     Frontend      │
-                    │ Next.js + React    │
-                    │ TypeScript         │
-                    └─────────┬─────────┘
-                              │
-                           REST API
-                              │
-                              ▼
-                    ┌───────────────────┐
-                    │ FastAPI Backend   │
-                    │      Python       │
-                    └─────────┬─────────┘
-                              │
-             ┌────────────────┼────────────────┐
-             │                │                │
-             ▼                ▼                ▼
-       ┌──────────┐    ┌─────────────┐   ┌────────────┐
-       │PostgreSQL│    │  ML Models  │   │ OpenAI API │
-       │ Database │    │ DNS Filter  │   │ AI Insights│
-       └──────────┘    └─────────────┘   └────────────┘
+                    ┌───────────────────┐
+                    │     Frontend      │
+                    │ Next.js + React    │
+                    │ TypeScript         │
+                    └─────────┬─────────┘
+                              │
+                           REST API
+                              │
+                              ▼
+                    ┌───────────────────┐
+                    │ FastAPI Backend   │
+                    │      Python       │
+                    └─────────┬─────────┘
+                              │
+             ┌────────────────┼────────────────┐
+             │                │                │
+             ▼                ▼                ▼
+       ┌──────────┐    ┌─────────────┐   ┌────────────┐
+       │PostgreSQL│    │  ML Models  │   │ OpenAI API │
+       │ Database │    │ DNS Filter  │   │ AI Insights│
+       └──────────┘    └─────────────┘   └────────────┘
 
+```
 ---
 
 # 🤖 Machine Learning & DNS Filtering
@@ -545,41 +546,42 @@ The machine learning workflow follows these stages:
 
 ```text
 Raw Dataset
-     │
-     ▼
+     │
+     ▼
 Data Loading
-     │
-     ▼
+     │
+     ▼
 Data Cleaning
-     │
-     ▼
+     │
+     ▼
 Data Preprocessing
-     │
-     ▼
+     │
+     ▼
 Feature Engineering
-     │
-     ▼
+     │
+     ▼
 Feature Encoding
-     │
-     ▼
+     │
+     ▼
 Train / Test Split
-     │
-     ▼
+     │
+     ▼
 Model Training
-     │
-     ▼
+     │
+     ▼
 Model Evaluation
-     │
-     ▼
+     │
+     ▼
 Model Persistence
-     │
-     ▼
+     │
+     ▼
 DNS Classification
-     │
-     ▼
+     │
+     ▼
 Allow / Block Decision
 
 
+```
 ---
 
 
@@ -692,42 +694,43 @@ decisions.
 ## 🛡️ DNS Filtering Workflow
 
 ```text
-                  DNS Request
-                       │
-                       ▼
-              Data Preprocessing
-                       │
-                       ▼
-               Feature Encoding
-                       │
-                       ▼
-                ML Classifier
-                       │
-                       ▼
-               DNS Classification
-                       │
-          ┌────────────┼────────────┐
-          ▼            ▼            ▼
-       Benign      Malicious    Suspicious
-          │            │            │
-          └────────────┼────────────┘
-                       ▼
-               Policy Evaluation
-                       │
-                 ┌─────┴─────┐
-                 ▼           ▼
-               ALLOW       BLOCK
-                 │           │
-                 └─────┬─────┘
-                       ▼
-                 Activity Log
-                       │
-                       ▼
-                Risk Assessment
-                       │
-                       ▼
-              Parent Notification
+                  DNS Request
+                       │
+                       ▼
+              Data Preprocessing
+                       │
+                       ▼
+               Feature Encoding
+                       │
+                       ▼
+                ML Classifier
+                       │
+                       ▼
+               DNS Classification
+                       │
+          ┌────────────┼────────────┐
+          ▼            ▼            ▼
+       Benign      Malicious    Suspicious
+          │            │            │
+          └────────────┼────────────┘
+                       ▼
+               Policy Evaluation
+                       │
+                 ┌─────┴─────┐
+                 ▼           ▼
+               ALLOW       BLOCK
+                 │           │
+                 └─────┬─────┘
+                       ▼
+                 Activity Log
+                       │
+                       ▼
+                Risk Assessment
+                       │
+                       ▼
+              Parent Notification
 
+```
 ## 📊 DNS Safety Categories
 
 The DNS Filtering module classifies DNS requests into four safety
@@ -786,24 +789,25 @@ The final website decision can consider multiple factors:
 - Safe-search settings
 
 ```text
-                 DNS Request
-                      │
-                      ▼
-              ML Classification
-                      │
-       ┌──────────────┼──────────────┐
-       ▼              ▼              ▼
-    Benign        Suspicious      Malicious
-       │              │              │
-       └──────────────┼──────────────┘
-                      ▼
-              Policy Evaluation
-                      │
-                ┌─────┴─────┐
-                ▼           ▼
-              ALLOW        BLOCK
+                 DNS Request
+                      │
+                      ▼
+              ML Classification
+                      │
+       ┌──────────────┼──────────────┐
+       ▼              ▼              ▼
+    Benign        Suspicious      Malicious
+       │              │              │
+       └──────────────┼──────────────┘
+                      ▼
+              Policy Evaluation
+                      │
+                ┌─────┴─────┐
+                ▼           ▼
+              ALLOW        BLOCK
 
 
+```
 ---
 
 ## 📈 Model Evaluation
@@ -849,27 +853,28 @@ The backend follows a modular architecture that separates API routing,
 business logic, data validation, database operations, and security.
 
 ```text
-                    FastAPI Backend
-                          │
-          ┌───────────────┼───────────────┐
-          │               │               │
-          ▼               ▼               ▼
-       Routers         Services         Security
-          │               │               │
-          ▼               ▼               ▼
-       API Layer      Business Logic   Authentication
-          │               │
-          └───────┬───────┘
-                  ▼
-              Schemas
-                  │
-                  ▼
-               Models
-                  │
-                  ▼
-             PostgreSQL
+                    FastAPI Backend
+                          │
+          ┌───────────────┼───────────────┐
+          │               │               │
+          ▼               ▼               ▼
+       Routers         Services         Security
+          │               │               │
+          ▼               ▼               ▼
+       API Layer      Business Logic   Authentication
+          │               │
+          └───────┬───────┘
+                  ▼
+              Schemas
+                  │
+                  ▼
+               Models
+                  │
+                  ▼
+             PostgreSQL
 
 
+```
 ## 🧩 Backend Components
 
 The MindShield AI backend is divided into multiple components, with each
@@ -960,36 +965,37 @@ MindShield AI.
 # 🔄 Backend Request Flow
 
 ```text
-                     Client Request
-                           │
-                           ▼
-                    FastAPI Router
-                           │
-                           ▼
-                    Authentication
-                           │
-                           ▼
-                    Pydantic Schema
-                           │
-                           ▼
-                       Service
-                    Business Logic
-                           │
-              ┌────────────┴────────────┐
-              ▼                         ▼
-         ML / AI Services          Database
-              │                         │
-              └────────────┬────────────┘
-                           ▼
-                    Processed Result
-                           │
-                           ▼
-                    API Response
-                           │
-                           ▼
-                       Frontend
+                     Client Request
+                           │
+                           ▼
+                    FastAPI Router
+                           │
+                           ▼
+                    Authentication
+                           │
+                           ▼
+                    Pydantic Schema
+                           │
+                           ▼
+                       Service
+                    Business Logic
+                           │
+              ┌────────────┴────────────┐
+              ▼                         ▼
+         ML / AI Services          Database
+              │                         │
+              └────────────┬────────────┘
+                           ▼
+                    Processed Result
+                           │
+                           ▼
+                    API Response
+                           │
+                           ▼
+                       Frontend
 
 
+```
 ---
 
 # 📚 API Documentation
@@ -1006,6 +1012,7 @@ The Swagger UI can be accessed at:
 ```text
 http://localhost:8000/docs
 
+```
 ---
 
 # 🗄️ Database & Data Management
@@ -1064,6 +1071,7 @@ SECRET_KEY=your_secret_key
 JWT_SECRET_KEY=your_jwt_secret
 OPENAI_API_KEY=your_openai_api_key
 
+```
 ---
 
 # ⚙️ Installation & Setup
@@ -1086,6 +1094,7 @@ Make sure the following are installed before running the project:
 git clone <repository-url>
 cd AI-Digital-Wellbeing-and-Child-Safety-Platform
 
+```
 ---
 
 # 🚀 Running the Backend
@@ -1096,6 +1105,7 @@ the FastAPI server using:
 ```bash
 uvicorn main:app --reload
 
+```
 ---
 
 # 🖥️ Frontend Setup & Running the Frontend
@@ -1107,6 +1117,7 @@ cd frontend
 npm install
 npm run dev
 
+```
 ---
 
 # 🗄️ Database Setup & Migrations
@@ -1118,6 +1129,7 @@ Configure the database connection in the `.env` file:
 ```env
 DATABASE_URL=your_database_url
 
+```
 ---
 
 # 🧪 API Testing with Postman
@@ -1137,6 +1149,7 @@ The backend should be running before testing the APIs.
 ```bash
 uvicorn main:app --reload
 
+```
 ---
 
 # 📁 Project Structure
@@ -1150,20 +1163,20 @@ AI-Digital-Wellbeing-and-Child-Safety-Platform/
 ├── frontend/
 │
 ├── backend/
-│   ├── routers/
-│   ├── services/
-│   ├── schemas/
-│   ├── models/
-│   ├── core/
-│   ├── database/
-│   ├── migrations/
-│   └── main.py
+│   ├── routers/
+│   ├── services/
+│   ├── schemas/
+│   ├── models/
+│   ├── core/
+│   ├── database/
+│   ├── migrations/
+│   └── main.py
 │
 ├── ml/
-│   ├── data/
-│   ├── models/
-│   ├── training/
-│   └── preprocessing/
+│   ├── data/
+│   ├── models/
+│   ├── training/
+│   └── preprocessing/
 │
 ├── .env.example
 ├── .gitignore
@@ -1172,6 +1185,7 @@ AI-Digital-Wellbeing-and-Child-Safety-Platform/
 ├── LICENSE
 └── README.md
 
+```
 ---
 
 # 🔀 Git & GitHub Workflow
@@ -1193,6 +1207,7 @@ git commit -m "Add feature"
 
 git push origin feature/your-feature
 
+```
 ## Main Branch
 
 The main branch contains the integrated and reviewed version of the
