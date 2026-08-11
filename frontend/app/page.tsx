@@ -834,772 +834,319 @@ function ReportsPage({
     </div>
   );
 }
-function DashboardOverview() {
-  const [selectedStudent, setSelectedStudent] = useState<Student>(
-    students[0]
-  );
-
-  const [menuOpen, setMenuOpen] = useState(false);
-
-  const [scanRunning, setScanRunning] = useState(false);
-
-  /* ========================================================= */
-  /* LOAD SELECTED STUDENT */
-  /* ========================================================= */
-
-  useEffect(() => {
-    const savedId = localStorage.getItem(STORAGE_KEY);
-
-    if (savedId) {
-      const student = students.find(
-        (item) => item.id === Number(savedId)
-      );
-
-      if (student) {
-        setSelectedStudent(student);
-      }
-    }
-
-    const handleStudentChange = () => {
-      const id = localStorage.getItem(STORAGE_KEY);
-
-      if (!id) return;
-
-      const student = students.find(
-        (item) => item.id === Number(id)
-      );
-
-      if (student) {
-        setSelectedStudent(student);
-      }
-    };
-
-    window.addEventListener(
-      STUDENT_EVENT,
-      handleStudentChange
-    );
-
-    window.addEventListener(
-      "storage",
-      handleStudentChange
-    );
-
-    return () => {
-      window.removeEventListener(
-        STUDENT_EVENT,
-        handleStudentChange
-      );
-
-      window.removeEventListener(
-        "storage",
-        handleStudentChange
-      );
-    };
-  }, []);
-
-  /* ========================================================= */
-  /* CHANGE STUDENT */
-  /* ========================================================= */
-
-  const changeStudent = (student: Student) => {
-    setSelectedStudent(student);
-    setMenuOpen(false);
-
-    localStorage.setItem(
-      STORAGE_KEY,
-      student.id.toString()
-    );
-
-    window.dispatchEvent(
-      new Event(STUDENT_EVENT)
-    );
-  };
-
-  /* ========================================================= */
-  /* RUN AI SCAN */
-  /* ========================================================= */
-
-  const runAIScan = () => {
-    setScanRunning(true);
-
-    setTimeout(() => {
-      setScanRunning(false);
-    }, 2000);
-  };
-
+function DashboardOverview({
+  selectedStudent,
+  runAIScan,
+  scanRunning,
+}: {
+  selectedStudent: Student;
+  runAIScan: () => void;
+  scanRunning: boolean;
+}) {
   return (
-    <div className="min-h-screen bg-[#f7f9fc] text-slate-900">
+<main className="flex-1 p-7 overflow-hidden">
 
-      {/* ===================================================== */}
-      {/* HEADER */}
-      {/* ===================================================== */}
 
-      <header className="h-[74px] bg-white border-b border-slate-200 flex items-center px-7">
+  {/* TITLE */}
 
-        {/* LOGO */}
+  <div className="flex justify-between items-center mb-6">
 
-        <div className="flex items-center gap-3 w-[235px]">
+    <div>
 
-          <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white">
-            🛡
-          </div>
+      <p className="text-xs text-slate-400 mb-1">
+        Dashboard / {selectedStudent.name}
+      </p>
 
-          <div>
+      <h2 className="text-[27px] font-bold">
+        {selectedStudent.name}'s Dashboard
+      </h2>
 
-            <h1 className="font-bold text-[17px]">
-              AI Wellbeing
-            </h1>
+      <p className="text-sm text-slate-400 mt-1">
+        AI-powered wellbeing and safety overview for{" "}
+        {selectedStudent.name}.
+      </p>
 
-            <p className="text-[10px] text-slate-400">
-              Child Safety & Mental Health Engine
-            </p>
+    </div>
 
-          </div>
 
-        </div>
+    <div className="flex gap-3">
 
+      <button className="px-4 py-2.5 bg-white border border-slate-200 rounded-lg text-sm">
+        ◔ Focus Mode
+      </button>
 
-        {/* ================================================= */}
-        {/* STUDENT SELECTOR */}
-        {/* ================================================= */}
+      <button
+        onClick={runAIScan}
+        className="px-4 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-semibold"
+      >
+        {scanRunning
+          ? "⟳ Scanning..."
+          : "⚡ Run AI Scan"}
+      </button>
 
-        <div className="relative">
+    </div>
 
-          <button
-            onClick={() => setMenuOpen(!menuOpen)}
-            className="w-[285px] h-[56px] bg-white border border-slate-200 rounded-xl flex items-center px-4 gap-3 hover:bg-slate-50"
-          >
+  </div>
 
-            <div className="w-9 h-9 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold">
-              {selectedStudent.avatar}
-            </div>
 
-            <div className="text-left flex-1">
+  {/* STUDENT STATUS */}
 
-              <p className="text-sm font-semibold">
-                {selectedStudent.name}
-              </p>
+  <div className="flex justify-end mb-4">
 
-              <p className="text-[11px] text-slate-400">
-                Age {selectedStudent.age} •{" "}
-                {selectedStudent.device}
-              </p>
+    <span className="px-4 py-2 bg-white border border-slate-200 rounded-full text-xs">
 
-            </div>
+      <span className="inline-block w-2 h-2 rounded-full bg-green-500 mr-2" />
 
-            <span className="text-slate-400">
-              {menuOpen ? "⌃" : "⌄"}
-            </span>
+      {selectedStudent.name} Active
 
-          </button>
+    </span>
 
+  </div>
 
-          {/* ================================================= */}
-          {/* DROPDOWN */}
-          {/* ================================================= */}
 
-          {menuOpen && (
+  {/* ================================================= */}
+  {/* TOP CARDS */}
+  {/* ================================================= */}
 
-            <div className="absolute top-[62px] left-0 w-[330px] bg-white border border-slate-200 rounded-2xl shadow-xl z-50 overflow-hidden">
+  <div className="grid grid-cols-4 gap-4 mb-5">
 
-              <div className="px-5 py-4 border-b border-slate-100">
 
-                <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">
-                  Select Child
-                </p>
+    {/* SCREEN TIME */}
 
-              </div>
+    <DashboardCard
+      icon="◷"
+      title="SCREEN TIME"
+      value={selectedStudent.screenTime}
+      suffix={`/ ${selectedStudent.screenGoal}`}
+      description="Today's usage"
+    />
 
 
-              {/* ALL CHILDREN */}
+    {/* BLOCKED CONTENT */}
 
-              <button
-                onClick={() => setMenuOpen(false)}
-                className="w-full flex items-center gap-4 px-5 py-4 hover:bg-slate-50 text-left"
-              >
+    <DashboardCard
+      icon="🛡"
+      title="BLOCKED CONTENT"
+      value={String((selectedStudent as Student & { blockedContent?: number | string }).blockedContent ?? 0)}
+      suffix=" Items"
+      description={`${selectedStudent.threats} threats detected`}
+    />
 
-                <div className="w-11 h-11 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-[10px] font-bold">
-                  ALL
-                </div>
 
-                <div>
+    {/* WELLBEING */}
 
-                  <p className="font-semibold">
-                    All Children
-                  </p>
+    <DashboardCard
+      icon="♡"
+      title="WELLBEING INDEX"
+      value={selectedStudent.wellbeing.toString()}
+      suffix="/100"
+      description="Healthy balance"
+    />
 
-                  <p className="text-xs text-slate-400">
-                    View family overview
-                  </p>
 
-                </div>
+    {/* DEVICE */}
 
-              </button>
+    <DashboardCard
+      icon="✓"
+      title="SAFETY STATUS"
+      value="Protected"
+      suffix=""
+      description={`${selectedStudent.device} synced`}
+    />
 
+  </div>
 
-              {/* STUDENTS */}
 
-              {students.map((student) => (
+  {/* ================================================= */}
+  {/* AI WELLBEING SUMMARY */}
+  {/* ================================================= */}
 
-                <button
-                  key={student.id}
-                  onClick={() => changeStudent(student)}
-                  className={`w-full flex items-center gap-4 px-5 py-4 text-left transition
-                    ${
-                      selectedStudent.id === student.id
-                        ? "bg-blue-50"
-                        : "hover:bg-slate-50"
-                    }
-                  `}
-                >
+  <section className="bg-[#202b68] text-white rounded-2xl p-6 mb-5">
 
-                  <div className="w-11 h-11 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-sm font-bold">
-                    {student.avatar}
-                  </div>
+    <div className="flex justify-between items-center mb-5">
 
-                  <div className="flex-1">
+      <div>
 
-                    <p className="font-semibold text-sm">
-                      {student.name}
-                    </p>
+        <h3 className="text-lg font-bold">
+          🧠 AI Wellbeing Summary
+        </h3>
 
-                    <p className="text-xs text-slate-400">
-                      Age {student.age} • {student.device}
-                    </p>
+        <p className="text-xs text-blue-200 mt-1">
+          Personalized analysis for {selectedStudent.name}
+        </p>
 
-                  </div>
+      </div>
 
-                  {selectedStudent.id === student.id && (
-                    <span className="text-blue-600">
-                      ✓
-                    </span>
-                  )}
+      <button className="px-4 py-2 bg-blue-600 rounded-lg text-xs">
+        Run Deep AI Scan
+      </button>
 
-                </button>
+    </div>
 
-              ))}
 
-            </div>
+    <div className="grid grid-cols-3 gap-4">
 
-          )}
 
-        </div>
+      {/* EDUCATION */}
 
+      <div className="bg-white/10 rounded-xl p-4">
 
-        {/* ================================================= */}
-        {/* SEARCH */}
-        {/* ================================================= */}
+        <p className="text-sm font-semibold">
+          📈 STEM & Educational Focus
+        </p>
 
-        <div className="ml-5 flex-1 max-w-[360px]">
+        <p className="text-xs text-blue-100 mt-3 leading-5">
+          {selectedStudent.educationalFocus}
+          today. Educational engagement is healthy.
+        </p>
 
-          <div className="h-[46px] border border-slate-200 rounded-xl flex items-center px-4 gap-3 bg-white">
+      </div>
 
-            <span className="text-slate-400">
-              🔍
-            </span>
 
-            <input
-              placeholder="Search apps, domains, alerts..."
-              className="outline-none w-full text-sm"
-            />
+      {/* EMOTIONAL */}
 
-          </div>
+      <div className="bg-white/10 rounded-xl p-4">
 
-        </div>
+        <p className="text-sm font-semibold">
+          ♡ Emotional & Chat Sentiment
+        </p>
 
+        <p className="text-xs text-blue-100 mt-3 leading-5">
+          AI analysis indicates{" "}
+          {selectedStudent.chatSentiment.toLowerCase()}.
+          No major emotional risk detected.
+        </p>
 
-        {/* ================================================= */}
-        {/* PARENT */}
-        {/* ================================================= */}
+      </div>
 
-        <div className="ml-auto flex items-center gap-4">
 
-          <button className="text-slate-500">
-            🔔
-          </button>
+      {/* SLEEP */}
 
-          <div className="w-9 h-9 rounded-full bg-slate-900 text-white flex items-center justify-center text-xs">
-            {parent.avatar}
-          </div>
+      <div className="bg-white/10 rounded-xl p-4">
 
-          <div>
+        <p className="text-sm font-semibold">
+          ◔ Sleep & Downtime Protection
+        </p>
 
-            <p className="text-sm font-semibold">
-              {parent.name}
-            </p>
-
-            <p className="text-[10px] text-green-600">
-              {parent.role}
-            </p>
-
-          </div>
-
-        </div>
-
-      </header>
-
-
-      {/* ===================================================== */}
-      {/* BODY */}
-      {/* ===================================================== */}
-
-      <div className="flex">
-
-        {/* ================================================= */}
-        {/* SIDEBAR */}
-        {/* ================================================= */}
-
-        <aside className="w-[235px] min-h-[calc(100vh-74px)] bg-white border-r border-slate-200 p-5">
-
-          <p className="text-[10px] font-bold text-slate-400 uppercase mb-4">
-            Main Menu
-          </p>
-
-          <nav className="space-y-1">
-
-            <DashboardSidebarItem
-              icon="▦"
-              label="Dashboard Overview"
-              active
-            />
-
-            <DashboardSidebarItem
-              icon="⌁"
-              label="Wellbeing Analytics"
-            />
-
-            <DashboardSidebarItem
-              icon="♙"
-              label="Children & Devices"
-            />
-
-            <DashboardSidebarItem
-              icon="✓"
-              label="AI Content Filters"
-            />
-
-            <DashboardSidebarItem
-              icon="◉"
-              label="AI Risk Detection"
-            />
-
-            <DashboardSidebarItem
-              icon="⚠"
-              label="Live Risk Alerts"
-              badge="3"
-            />
-
-            <DashboardSidebarItem
-              icon="⚙"
-              label="Guardian Settings"
-            />
-
-          </nav>
-
-
-          {/* PROTECTION */}
-
-          <div className="mt-[220px] bg-blue-50 rounded-xl p-4">
-
-            <p className="text-xs font-bold text-blue-700">
-              ⚡ AI Protection Active
-            </p>
-
-            <p className="text-[10px] text-blue-500 mt-2 leading-4">
-              {selectedStudent.name} is protected by continuous
-              AI safety monitoring.
-            </p>
-
-          </div>
-
-
-          {/* PARENT */}
-
-          <div className="mt-5 pt-4 border-t border-slate-200">
-
-            <div className="flex items-center gap-3">
-
-              <div className="w-9 h-9 rounded-full bg-slate-900 text-white flex items-center justify-center text-xs">
-                {parent.avatar}
-              </div>
-
-              <div>
-
-                <p className="text-sm font-semibold">
-                  {parent.name}
-                </p>
-
-                <p className="text-[10px] text-slate-400">
-                  {parent.accountType}
-                </p>
-
-              </div>
-
-            </div>
-
-          </div>
-
-        </aside>
-
-
-        {/* ================================================= */}
-        {/* DASHBOARD */}
-        {/* ================================================= */}
-
-        <main className="flex-1 p-7 overflow-hidden">
-
-
-          {/* TITLE */}
-
-          <div className="flex justify-between items-center mb-6">
-
-            <div>
-
-              <p className="text-xs text-slate-400 mb-1">
-                Dashboard / {selectedStudent.name}
-              </p>
-
-              <h2 className="text-[27px] font-bold">
-                {selectedStudent.name}'s Dashboard
-              </h2>
-
-              <p className="text-sm text-slate-400 mt-1">
-                AI-powered wellbeing and safety overview for{" "}
-                {selectedStudent.name}.
-              </p>
-
-            </div>
-
-
-            <div className="flex gap-3">
-
-              <button className="px-4 py-2.5 bg-white border border-slate-200 rounded-lg text-sm">
-                ◔ Focus Mode
-              </button>
-
-              <button
-                onClick={runAIScan}
-                className="px-4 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-semibold"
-              >
-                {scanRunning
-                  ? "⟳ Scanning..."
-                  : "⚡ Run AI Scan"}
-              </button>
-
-            </div>
-
-          </div>
-
-
-          {/* STUDENT STATUS */}
-
-          <div className="flex justify-end mb-4">
-
-            <span className="px-4 py-2 bg-white border border-slate-200 rounded-full text-xs">
-
-              <span className="inline-block w-2 h-2 rounded-full bg-green-500 mr-2" />
-
-              {selectedStudent.name} Active
-
-            </span>
-
-          </div>
-
-
-          {/* ================================================= */}
-          {/* TOP CARDS */}
-          {/* ================================================= */}
-
-          <div className="grid grid-cols-4 gap-4 mb-5">
-
-
-            {/* SCREEN TIME */}
-
-            <DashboardCard
-              icon="◷"
-              title="SCREEN TIME"
-              value={selectedStudent.screenTime}
-              suffix={`/ ${selectedStudent.screenGoal}`}
-              description="Today's usage"
-            />
-
-
-            {/* BLOCKED CONTENT */}
-
-            <DashboardCard
-              icon="🛡"
-              title="BLOCKED CONTENT"
-              value={String((selectedStudent as Student & { blockedContent?: number | string }).blockedContent ?? 0)}
-              suffix=" Items"
-              description={`${selectedStudent.threats} threats detected`}
-            />
-
-
-            {/* WELLBEING */}
-
-            <DashboardCard
-              icon="♡"
-              title="WELLBEING INDEX"
-              value={selectedStudent.wellbeing.toString()}
-              suffix="/100"
-              description="Healthy balance"
-            />
-
-
-            {/* DEVICE */}
-
-            <DashboardCard
-              icon="✓"
-              title="SAFETY STATUS"
-              value="Protected"
-              suffix=""
-              description={`${selectedStudent.device} synced`}
-            />
-
-          </div>
-
-
-          {/* ================================================= */}
-          {/* AI WELLBEING SUMMARY */}
-          {/* ================================================= */}
-
-          <section className="bg-[#202b68] text-white rounded-2xl p-6 mb-5">
-
-            <div className="flex justify-between items-center mb-5">
-
-              <div>
-
-                <h3 className="text-lg font-bold">
-                  🧠 AI Wellbeing Summary
-                </h3>
-
-                <p className="text-xs text-blue-200 mt-1">
-                  Personalized analysis for {selectedStudent.name}
-                </p>
-
-              </div>
-
-              <button className="px-4 py-2 bg-blue-600 rounded-lg text-xs">
-                Run Deep AI Scan
-              </button>
-
-            </div>
-
-
-            <div className="grid grid-cols-3 gap-4">
-
-
-              {/* EDUCATION */}
-
-              <div className="bg-white/10 rounded-xl p-4">
-
-                <p className="text-sm font-semibold">
-                  📈 STEM & Educational Focus
-                </p>
-
-                <p className="text-xs text-blue-100 mt-3 leading-5">
-                  {selectedStudent.educationalFocus}
-                  today. Educational engagement is healthy.
-                </p>
-
-              </div>
-
-
-              {/* EMOTIONAL */}
-
-              <div className="bg-white/10 rounded-xl p-4">
-
-                <p className="text-sm font-semibold">
-                  ♡ Emotional & Chat Sentiment
-                </p>
-
-                <p className="text-xs text-blue-100 mt-3 leading-5">
-                  AI analysis indicates{" "}
-                  {selectedStudent.chatSentiment.toLowerCase()}.
-                  No major emotional risk detected.
-                </p>
-
-              </div>
-
-
-              {/* SLEEP */}
-
-              <div className="bg-white/10 rounded-xl p-4">
-
-                <p className="text-sm font-semibold">
-                  ◔ Sleep & Downtime Protection
-                </p>
-
-                <p className="text-xs text-blue-100 mt-3 leading-5">
-                  Bedtime protection is active.
-                  Scheduled bedtime is{" "}
-                  {selectedStudent.bedtime}.
-                </p>
-
-              </div>
-
-            </div>
-
-          </section>
-
-
-          {/* ================================================= */}
-          {/* STUDENT INFORMATION */}
-          {/* ================================================= */}
-
-          <section className="bg-white border border-slate-200 rounded-2xl p-6 mb-5">
-
-            <div className="flex items-center gap-4">
-
-              <div className="w-14 h-14 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold">
-                {selectedStudent.avatar}
-              </div>
-
-              <div className="flex-1">
-
-                <h3 className="font-bold text-lg">
-                  {selectedStudent.name}
-                </h3>
-
-                <p className="text-xs text-slate-400 mt-1">
-                  Age {selectedStudent.age} • Class{" "}
-                  {selectedStudent.className} •{" "}
-                  {selectedStudent.school}
-                </p>
-
-              </div>
-
-              <div className="text-right">
-
-                <p className="text-[10px] text-slate-400 uppercase">
-                  Connected Device
-                </p>
-
-                <p className="text-sm font-semibold">
-                  💻 {selectedStudent.device}
-                </p>
-
-              </div>
-
-            </div>
-
-          </section>
-
-
-          {/* ================================================= */}
-          {/* HOURLY SCREEN TIME */}
-          {/* ================================================= */}
-
-          <section className="bg-white border border-slate-200 rounded-2xl p-6">
-
-            <div className="flex justify-between items-center mb-5">
-
-              <div>
-
-                <h3 className="font-bold">
-                  Today's Hourly Screen Time Breakdown
-                </h3>
-
-                <p className="text-xs text-slate-400 mt-1">
-                  Screen activity for {selectedStudent.name}
-                </p>
-
-              </div>
-
-              <button className="px-3 py-2 bg-blue-600 text-white rounded-lg text-xs">
-                Generate Daily Report
-              </button>
-
-            </div>
-
-
-            {/* SIMPLE GRAPH */}
-
-            <div className="h-[180px] relative">
-
-              <div className="absolute left-0 right-0 top-8 border-t border-slate-100" />
-
-              <div className="absolute left-0 right-0 top-20 border-t border-slate-100" />
-
-              <div className="absolute left-0 right-0 top-32 border-t border-slate-100" />
-
-              <div className="absolute left-0 right-0 top-44 border-t border-slate-100" />
-
-
-              <div className="absolute bottom-0 left-0 right-0 flex justify-between text-[10px] text-slate-400">
-
-                <span>6 AM</span>
-                <span>9 AM</span>
-                <span>12 PM</span>
-                <span>3 PM</span>
-                <span>6 PM</span>
-                <span>9 PM</span>
-
-              </div>
-
-
-              <div className="absolute left-0 right-0 top-[75px] h-[3px] bg-blue-500 rounded-full rotate-[-2deg]" />
-
-              <div className="absolute left-0 right-0 top-[95px] h-[3px] bg-purple-500 rounded-full rotate-[1deg]" />
-
-              <div className="absolute left-0 right-0 top-[115px] h-[3px] bg-green-500 rounded-full rotate-[-1deg]" />
-
-            </div>
-
-          </section>
-
-        </main>
+        <p className="text-xs text-blue-100 mt-3 leading-5">
+          Bedtime protection is active.
+          Scheduled bedtime is{" "}
+          {selectedStudent.bedtime}.
+        </p>
 
       </div>
 
     </div>
-  );
-}
+
+  </section>
 
 
+  {/* ================================================= */}
+  {/* STUDENT INFORMATION */}
+  {/* ================================================= */}
+
+  <section className="bg-white border border-slate-200 rounded-2xl p-6 mb-5">
+
+    <div className="flex items-center gap-4">
+
+      <div className="w-14 h-14 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold">
+        {selectedStudent.avatar}
+      </div>
+
+      <div className="flex-1">
+
+        <h3 className="font-bold text-lg">
+          {selectedStudent.name}
+        </h3>
+
+        <p className="text-xs text-slate-400 mt-1">
+          Age {selectedStudent.age} • Class{" "}
+          {selectedStudent.className} •{" "}
+          {selectedStudent.school}
+        </p>
+
+      </div>
+
+      <div className="text-right">
+
+        <p className="text-[10px] text-slate-400 uppercase">
+          Connected Device
+        </p>
+
+        <p className="text-sm font-semibold">
+          💻 {selectedStudent.device}
+        </p>
+
+      </div>
+
+    </div>
+
+  </section>
 
 
-/* ========================================================= */
-/* SIDEBAR ITEM */
-/* ========================================================= */
+  {/* ================================================= */}
+  {/* HOURLY SCREEN TIME */}
+  {/* ================================================= */}
 
-function DashboardSidebarItem({
-  icon,
-  label,
-  badge,
-  active,
-}: {
-  icon: string;
-  label: string;
-  badge?: string;
-  active?: boolean;
-}) {
-  return (
-    <button
-      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition
-        ${
-          active
-            ? "bg-blue-50 text-blue-600"
-            : "text-slate-600 hover:bg-blue-50 hover:text-blue-600"
-        }
-      `}
-    >
+  <section className="bg-white border border-slate-200 rounded-2xl p-6">
 
-      <span className="w-5 text-center">
-        {icon}
-      </span>
+    <div className="flex justify-between items-center mb-5">
 
-      <span className="flex-1 text-left">
-        {label}
-      </span>
+      <div>
 
-      {badge && (
-        <span className="w-5 h-5 rounded-full bg-yellow-100 text-yellow-700 text-[10px] flex items-center justify-center">
-          {badge}
-        </span>
-      )}
+        <h3 className="font-bold">
+          Today's Hourly Screen Time Breakdown
+        </h3>
 
-    </button>
+        <p className="text-xs text-slate-400 mt-1">
+          Screen activity for {selectedStudent.name}
+        </p>
+
+      </div>
+
+      <button className="px-3 py-2 bg-blue-600 text-white rounded-lg text-xs">
+        Generate Daily Report
+      </button>
+
+    </div>
+
+
+    {/* SIMPLE GRAPH */}
+
+    <div className="h-[180px] relative">
+
+      <div className="absolute left-0 right-0 top-8 border-t border-slate-100" />
+
+      <div className="absolute left-0 right-0 top-20 border-t border-slate-100" />
+
+      <div className="absolute left-0 right-0 top-32 border-t border-slate-100" />
+
+      <div className="absolute left-0 right-0 top-44 border-t border-slate-100" />
+
+
+      <div className="absolute bottom-0 left-0 right-0 flex justify-between text-[10px] text-slate-400">
+
+        <span>6 AM</span>
+        <span>9 AM</span>
+        <span>12 PM</span>
+        <span>3 PM</span>
+        <span>6 PM</span>
+        <span>9 PM</span>
+
+      </div>
+
+
+      <div className="absolute left-0 right-0 top-[75px] h-[3px] bg-blue-500 rounded-full rotate-[-2deg]" />
+
+      <div className="absolute left-0 right-0 top-[95px] h-[3px] bg-purple-500 rounded-full rotate-[1deg]" />
+
+      <div className="absolute left-0 right-0 top-[115px] h-[3px] bg-green-500 rounded-full rotate-[-1deg]" />
+
+    </div>
+
+  </section>
+
+</main>
   );
 }
 
@@ -1692,6 +1239,15 @@ export default function Home() {
   const [adminMenuOpen, setAdminMenuOpen] = useState(false);
 
   const [focusMode, setFocusMode] = useState(false);
+
+  const [scanRunning, setScanRunning] = useState(false);
+
+  const runAIScan = () => {
+    setScanRunning(true);
+    window.setTimeout(() => {
+      setScanRunning(false);
+    }, 2000);
+  };
 
   const [selectedStudent, setSelectedStudent] =
     useState<Student | null>(null);
@@ -1931,7 +1487,13 @@ export default function Home() {
   const renderPage = () => {
   switch (activeItem) {
     case "Dashboard Overview":
-      return <DashboardOverview />;
+      return (
+        <DashboardOverview
+          selectedStudent={selectedStudent}
+          runAIScan={runAIScan}
+          scanRunning={scanRunning}
+        />
+      );
 
     case "Wellbeing Analytics":
       return <WellbeingAnalytics />;
@@ -1973,7 +1535,13 @@ export default function Home() {
       );
 
     default:
-      return <DashboardOverview />;
+      return (
+        <DashboardOverview
+          selectedStudent={selectedStudent}
+          runAIScan={runAIScan}
+          scanRunning={scanRunning}
+        />
+      );
   }
 };
 
